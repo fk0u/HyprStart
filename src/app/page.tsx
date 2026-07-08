@@ -13,6 +13,7 @@ import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { TodoWidget } from "@/components/widgets/TodoWidget";
 import { SnippetWidget } from "@/components/widgets/SnippetWidget";
 import { CryptoWidget } from "@/components/widgets/CryptoWidget";
+import { AmbientSound } from "@/components/widgets/AmbientSound";
 
 import { Settings, X, Image as ImageIcon, Palette, Eye, EyeOff } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -24,16 +25,34 @@ const Dashboard: React.FC = () => {
   } = useHyprStore();
   const { theme, showCosmosParticles, backgroundIndex, backgroundUrl } = state;
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [customBgInput, setCustomBgInput] = useState(backgroundUrl);
   const [settingsTab, setSettingsTab] = useState<"theme" | "wallpaper">("theme");
 
-  // Escape key exits focus mode or settings
+  // Keyboard navigation shortcuts
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isTyping = activeEl && (
+        activeEl.tagName === "INPUT" ||
+        activeEl.tagName === "TEXTAREA" ||
+        activeEl.getAttribute("contenteditable") === "true"
+      );
+
+      if (e.key === "?" && !isTyping) {
+        e.preventDefault();
+        setShowHelp((prev) => !prev);
+      }
+      if (e.key === "g" && !isTyping) {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[placeholder="Search the web..."]') as HTMLInputElement;
+        searchInput?.focus();
+      }
       if (e.key === "Escape") {
         if (focusMode) setFocusMode(false);
         if (showSettings) setShowSettings(false);
+        if (showHelp) setShowHelp(false);
       }
       if (e.key === "f" && e.altKey) {
         e.preventDefault();
@@ -42,7 +61,7 @@ const Dashboard: React.FC = () => {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [focusMode, showSettings]);
+  }, [focusMode, showSettings, showHelp]);
 
 
 
@@ -111,6 +130,9 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="relative">
                   <SnippetWidget />
+                </div>
+                <div className="relative">
+                  <AmbientSound />
                 </div>
               </div>
 
@@ -312,6 +334,63 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Keyboard shortcuts guide overlay ─── */}
+      <AnimatePresence>
+        {showHelp && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowHelp(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.25 }}
+              className="bg-card-bg/95 backdrop-blur-xl border border-card-border rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground/75">Keyboard Shortcuts</h2>
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="text-foreground/30 hover:text-foreground/60 cursor-pointer transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Shortcut rows */}
+              <div className="space-y-3 font-mono text-xs">
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-foreground/50">Focus Search Input</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-foreground/80 font-bold border border-white/10">g</kbd>
+                </div>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-foreground/50">Toggle Focus Mode</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-foreground/80 font-bold border border-white/10">Alt + F</kbd>
+                </div>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-foreground/50">Command Palette</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-foreground/80 font-bold border border-white/10">Ctrl + K / Alt + D</kbd>
+                </div>
+                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span className="text-foreground/50">Exit Panel / Focus Mode</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-foreground/80 font-bold border border-white/10">Esc</kbd>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-foreground/50">Toggle this Guide</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-foreground/80 font-bold border border-white/10">?</kbd>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}

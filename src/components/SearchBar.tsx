@@ -166,7 +166,7 @@ export const SearchBar: React.FC = () => {
             className="absolute left-0 right-0 z-50 bg-white/[0.06] backdrop-blur-md border border-white/[0.06] border-t-0 rounded-b-2xl overflow-hidden"
           >
             {suggestions.map((s, i) => (
-              <button
+              <div
                 key={i}
                 onClick={() => executeSearch(s)}
                 onMouseEnter={() => setSelectedIdx(i)}
@@ -192,7 +192,7 @@ export const SearchBar: React.FC = () => {
                 >
                   <ArrowUpLeft size={12} />
                 </button>
-              </button>
+              </div>
             ))}
 
             {/* Footer hint */}

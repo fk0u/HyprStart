@@ -37,13 +37,17 @@ export interface HyprState {
   todoList: TodoItem[];
   snippets: CodeSnippet[];
   weatherCity: string;
+  weatherTemp: number | null;
+  weatherCondition: string | null;
+  weatherHumidity: number | null;
+  weatherWind: number | null;
   showCosmosParticles: boolean;
   use24hFormat: boolean;
   // Personalization
   userName: string;
   focusGoal: string;
-  backgroundUrl: string; // empty = use default from gallery
-  backgroundIndex: number; // index into BG_GALLERY
+  backgroundUrl: string;
+  backgroundIndex: number;
 }
 
 export interface HyprContextType {
@@ -59,6 +63,7 @@ export interface HyprContextType {
   addSnippet: (title: string, code: string, lang: string) => void;
   deleteSnippet: (id: string) => void;
   setWeatherCity: (city: string) => void;
+  fetchWeather: (cityOrCoords: string | { lat: number; lon: number }) => Promise<void>;
   toggleCosmosParticles: () => void;
   setUse24hFormat: (val: boolean) => void;
   importConfig: (config: string) => boolean;
@@ -103,6 +108,10 @@ const INITIAL_STATE: HyprState = {
   todoList: DEFAULT_TODOS,
   snippets: DEFAULT_SNIPPETS,
   weatherCity: "Jakarta",
+  weatherTemp: null,
+  weatherCondition: null,
+  weatherHumidity: null,
+  weatherWind: null,
   showCosmosParticles: true,
   use24hFormat: false,
   userName: "",
@@ -122,6 +131,10 @@ const mergeState = (parsed: Record<string, unknown>): HyprState => ({
   todoList: Array.isArray(parsed.todoList) ? parsed.todoList : INITIAL_STATE.todoList,
   snippets: Array.isArray(parsed.snippets) ? parsed.snippets : INITIAL_STATE.snippets,
   weatherCity: (parsed.weatherCity as string) || INITIAL_STATE.weatherCity,
+  weatherTemp: typeof parsed.weatherTemp === "number" ? parsed.weatherTemp : INITIAL_STATE.weatherTemp,
+  weatherCondition: (parsed.weatherCondition as string) || INITIAL_STATE.weatherCondition,
+  weatherHumidity: typeof parsed.weatherHumidity === "number" ? parsed.weatherHumidity : INITIAL_STATE.weatherHumidity,
+  weatherWind: typeof parsed.weatherWind === "number" ? parsed.weatherWind : INITIAL_STATE.weatherWind,
   showCosmosParticles: parsed.showCosmosParticles !== undefined ? (parsed.showCosmosParticles as boolean) : INITIAL_STATE.showCosmosParticles,
   use24hFormat: parsed.use24hFormat !== undefined ? (parsed.use24hFormat as boolean) : INITIAL_STATE.use24hFormat,
   userName: (parsed.userName as string) ?? INITIAL_STATE.userName,
@@ -195,6 +208,76 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const setBackgroundUrl = (backgroundUrl: string) => setState((p) => ({ ...p, backgroundUrl }));
   const setBackgroundIndex = (backgroundIndex: number) => setState((p) => ({ ...p, backgroundIndex }));
 
+  // Helper to map WMO weather codes to our canvas categories
+  const mapWmoCodeToCondition = (code: number): string => {
+    if (code === 0) return "Sunny";
+    if ([1, 2, 3].includes(code)) return "Cloudy";
+    if ([45, 48].includes(code)) return "Fog";
+    if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 85, 86, 95, 96, 99].includes(code)) return "Rain";
+    return "Clear";
+  };
+
+  const fetchWeather = async (cityOrCoords: string | { lat: number; lon: number }) => {
+    let lat: number;
+    let lon: number;
+    let cityName = typeof cityOrCoords === "string" ? cityOrCoords : "";
+
+    try {
+      if (typeof cityOrCoords === "string") {
+        // 1. Fetch Geocoding via Open-Meteo (API keyless)
+        const geoRes = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityOrCoords)}&count=1&language=en&format=json`
+        );
+        const geoData = await geoRes.json();
+        if (!geoData.results || geoData.results.length === 0) {
+          throw new Error("City not found");
+        }
+        const result = geoData.results[0];
+        lat = result.latitude;
+        lon = result.longitude;
+        cityName = `${result.name}, ${result.country_code?.toUpperCase()}`;
+      } else {
+        // 2. Coords from GPS, Reverse geocode city name via OSM Nominatim
+        lat = cityOrCoords.lat;
+        lon = cityOrCoords.lon;
+        
+        try {
+          const revRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`,
+            { headers: { "User-Agent": "HyprStart/3.0.0" } }
+          );
+          const revData = await revRes.json();
+          cityName = revData.address.city || revData.address.town || revData.address.village || revData.address.county || `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+        } catch {
+          cityName = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+        }
+      }
+
+      // 3. Fetch Forecast via Open-Meteo
+      const forecastRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`
+      );
+      const forecastData = await forecastRes.json();
+      const current = forecastData.current;
+
+      if (!current) {
+        throw new Error("Weather forecast failed");
+      }
+
+      setState((prev) => ({
+        ...prev,
+        weatherCity: cityName,
+        weatherTemp: Math.round(current.temperature_2m),
+        weatherCondition: mapWmoCodeToCondition(current.weather_code),
+        weatherHumidity: Math.round(current.relative_humidity_2m),
+        weatherWind: Math.round(current.wind_speed_10m),
+      }));
+
+    } catch (err) {
+      console.error("Failed to fetch weather telemetry", err);
+    }
+  };
+
   const importConfig = (configJson: string): boolean => {
     try {
       const parsed = JSON.parse(configJson);
@@ -229,7 +312,7 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         state, setTheme, toggleWidget, updateWidgetPosition,
         addBookmark, deleteBookmark, addTodo, toggleTodo, deleteTodo,
-        addSnippet, deleteSnippet, setWeatherCity, toggleCosmosParticles,
+        addSnippet, deleteSnippet, setWeatherCity, fetchWeather, toggleCosmosParticles,
         setUse24hFormat, importConfig, exportConfig, resetConfig,
         setUserName, setFocusGoal, setBackgroundUrl, setBackgroundIndex,
       }}

@@ -48,6 +48,7 @@ export interface HyprState {
   focusGoal: string;
   backgroundUrl: string;
   backgroundIndex: number;
+  interests: string[];
 }
 
 export interface HyprContextType {
@@ -74,6 +75,7 @@ export interface HyprContextType {
   setFocusGoal: (goal: string) => void;
   setBackgroundUrl: (url: string) => void;
   setBackgroundIndex: (index: number) => void;
+  setInterests: (interests: string[]) => void;
 }
 
 const DEFAULT_WIDGETS: WidgetState[] = [
@@ -118,6 +120,7 @@ const INITIAL_STATE: HyprState = {
   focusGoal: "",
   backgroundUrl: "",
   backgroundIndex: 0,
+  interests: ["tech", "japanese", "nature"],
 };
 
 const HyprContext = createContext<HyprContextType | undefined>(undefined);
@@ -141,6 +144,7 @@ const mergeState = (parsed: Record<string, unknown>): HyprState => ({
   focusGoal: (parsed.focusGoal as string) ?? INITIAL_STATE.focusGoal,
   backgroundUrl: (parsed.backgroundUrl as string) ?? INITIAL_STATE.backgroundUrl,
   backgroundIndex: typeof parsed.backgroundIndex === "number" ? parsed.backgroundIndex : INITIAL_STATE.backgroundIndex,
+  interests: Array.isArray(parsed.interests) ? (parsed.interests as string[]) : INITIAL_STATE.interests,
 });
 
 export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -207,6 +211,7 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const setFocusGoal = (focusGoal: string) => setState((p) => ({ ...p, focusGoal }));
   const setBackgroundUrl = (backgroundUrl: string) => setState((p) => ({ ...p, backgroundUrl }));
   const setBackgroundIndex = (backgroundIndex: number) => setState((p) => ({ ...p, backgroundIndex }));
+  const setInterests = (interests: string[]) => setState((p) => ({ ...p, interests }));
 
   // Helper to map WMO weather codes to our canvas categories
   const mapWmoCodeToCondition = (code: number): string => {
@@ -314,7 +319,7 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addBookmark, deleteBookmark, addTodo, toggleTodo, deleteTodo,
         addSnippet, deleteSnippet, setWeatherCity, fetchWeather, toggleCosmosParticles,
         setUse24hFormat, importConfig, exportConfig, resetConfig,
-        setUserName, setFocusGoal, setBackgroundUrl, setBackgroundIndex,
+        setUserName, setFocusGoal, setBackgroundUrl, setBackgroundIndex, setInterests,
       }}
     >
       {children}

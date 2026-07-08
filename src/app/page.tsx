@@ -14,6 +14,7 @@ import { TodoWidget } from "@/components/widgets/TodoWidget";
 import { SnippetWidget } from "@/components/widgets/SnippetWidget";
 import { CryptoWidget } from "@/components/widgets/CryptoWidget";
 import { AmbientSound } from "@/components/widgets/AmbientSound";
+import { DiscoverWidget } from "@/components/widgets/DiscoverWidget";
 
 import { Settings, X, Image as ImageIcon, Palette, Eye, EyeOff } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -21,14 +22,34 @@ import { AnimatePresence, motion } from "framer-motion";
 const Dashboard: React.FC = () => {
   const {
     state, setTheme, toggleCosmosParticles,
-    setBackgroundIndex, setBackgroundUrl,
+    setBackgroundIndex, setBackgroundUrl, setInterests, resetConfig,
   } = useHyprStore();
-  const { theme, showCosmosParticles, backgroundIndex, backgroundUrl } = state;
+  const { theme, showCosmosParticles, backgroundIndex, backgroundUrl, interests } = state;
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [customBgInput, setCustomBgInput] = useState(backgroundUrl);
   const [settingsTab, setSettingsTab] = useState<"theme" | "wallpaper">("theme");
+
+  const interestOptions = [
+    { id: "kpop", label: "🎵 K-Pop" },
+    { id: "anime", label: "🌸 Anime" },
+    { id: "japanese", label: "🎌 Japanese" },
+    { id: "tech", label: "💻 Tech" },
+    { id: "indopop", label: "🇮🇩 Indo Pop" },
+    { id: "hipdut", label: "🔥 Hipdut" },
+    { id: "globalpop", label: "🌍 Global Pop" },
+    { id: "fashion", label: "🧥 Fashion" },
+    { id: "nature", label: "🌲 Nature" },
+  ];
+
+  const handleToggleInterest = (id: string) => {
+    if (interests.includes(id)) {
+      setInterests(interests.filter((x) => x !== id));
+    } else {
+      setInterests([...interests, id]);
+    }
+  };
 
   // Keyboard navigation shortcuts
   useEffect(() => {
@@ -134,6 +155,9 @@ const Dashboard: React.FC = () => {
                 <div className="relative">
                   <AmbientSound />
                 </div>
+                <div className="relative">
+                  <DiscoverWidget />
+                </div>
               </div>
 
               {/* Right side */}
@@ -179,11 +203,11 @@ const Dashboard: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.25 }}
-              className="bg-card-bg/95 backdrop-blur-xl border border-card-border rounded-2xl p-6 w-full max-w-lg shadow-2xl"
+              className="bg-card-bg/95 backdrop-blur-xl border border-card-border rounded-2xl p-6 w-full max-w-lg shadow-2xl flex flex-col max-h-[85vh]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex justify-between items-center mb-5">
+              <div className="flex justify-between items-center mb-5 shrink-0">
                 <h2 className="text-lg font-medium">Settings</h2>
                 <button
                   onClick={() => setShowSettings(false)}
@@ -194,10 +218,10 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 mb-5 bg-white/[0.03] rounded-xl p-1">
+              <div className="flex gap-1 mb-5 bg-white/[0.03] rounded-xl p-1 shrink-0">
                 <button
                   onClick={() => setSettingsTab("theme")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                     settingsTab === "theme"
                       ? "bg-white/10 text-foreground/80"
                       : "text-foreground/35 hover:text-foreground/60"
@@ -207,133 +231,182 @@ const Dashboard: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setSettingsTab("wallpaper")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                     settingsTab === "wallpaper"
                       ? "bg-white/10 text-foreground/80"
                       : "text-foreground/35 hover:text-foreground/60"
                   }`}
                 >
-                  <ImageIcon size={13} /> Wallpaper
+                  <ImageIcon size={13} /> Wallpaper & Feed
                 </button>
               </div>
 
-              {/* Theme tab */}
-              {settingsTab === "theme" && (
-                <div className="space-y-3">
-                  {themes.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setTheme(t.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${
-                        theme === t.id
-                          ? "bg-white/10 border border-white/10"
-                          : "hover:bg-white/[0.04] border border-transparent"
-                      }`}
-                    >
-                      <div
-                        className="w-4 h-4 rounded-full shrink-0"
-                        style={{ backgroundColor: t.color }}
-                      />
-                      <span className="text-sm">{t.label}</span>
-                      {theme === t.id && (
-                        <span className="text-[10px] text-foreground/30 ml-auto">Active</span>
-                      )}
-                    </button>
-                  ))}
+              {/* Scrollable Content Container */}
+              <div className="flex-1 overflow-y-auto pr-1 min-h-0">
+                {/* Theme tab */}
+                {settingsTab === "theme" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-foreground/30">Theme Preset</p>
+                      {themes.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setTheme(t.id)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${
+                            theme === t.id
+                              ? "bg-white/10 border border-white/10"
+                              : "hover:bg-white/[0.04] border border-transparent"
+                          }`}
+                        >
+                          <div
+                            className="w-4 h-4 rounded-full shrink-0"
+                            style={{ backgroundColor: t.color }}
+                          />
+                          <span className="text-sm">{t.label}</span>
+                          {theme === t.id && (
+                            <span className="text-[10px] text-foreground/30 ml-auto">Active</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
 
-                  {/* Background toggle */}
-                  <div className="pt-3 border-t border-white/5">
-                    <button
-                      onClick={toggleCosmosParticles}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/[0.04] transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 text-sm">
-                        {showCosmosParticles ? <Eye size={14} /> : <EyeOff size={14} />}
-                        Background photo
+                    {/* Background toggle */}
+                    <div className="pt-3 border-t border-white/5">
+                      <button
+                        onClick={toggleCosmosParticles}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/[0.04] transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 text-sm">
+                          {showCosmosParticles ? <Eye size={14} /> : <EyeOff size={14} />}
+                          Background photo
+                        </div>
+                        <span className="text-[11px] text-foreground/30">
+                          {showCosmosParticles ? "On" : "Off"}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Keyboard hint */}
+                    <p className="text-[10px] text-foreground/20 text-center pt-2">
+                      Ctrl+K → command palette &nbsp;·&nbsp; Alt+F → focus mode &nbsp;·&nbsp; ? → hotkeys guide
+                    </p>
+                  </div>
+                )}
+
+                {/* Wallpaper & Interests tab */}
+                {settingsTab === "wallpaper" && (
+                  <div className="space-y-5">
+                    {/* Gallery grid */}
+                    <div>
+                      <p className="text-[11px] text-foreground/30 mb-2">Select Wallpaper</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {BG_GALLERY.map((bg, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              setBackgroundIndex(i);
+                              setBackgroundUrl("");
+                              setCustomBgInput("");
+                            }}
+                            className={`relative aspect-[16/10] rounded-xl overflow-hidden cursor-pointer group transition-all ${
+                              !backgroundUrl && backgroundIndex === i
+                                ? "ring-2 ring-accent ring-offset-1 ring-offset-background"
+                                : "opacity-60 hover:opacity-100"
+                            }`}
+                            title={bg.label}
+                          >
+                            <img
+                              src={bg.url}
+                              alt={bg.label}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </button>
+                        ))}
                       </div>
-                      <span className="text-[11px] text-foreground/30">
-                        {showCosmosParticles ? "On" : "Off"}
-                      </span>
-                    </button>
-                  </div>
+                    </div>
 
-                  {/* Keyboard hint */}
-                  <p className="text-[10px] text-foreground/20 text-center pt-2">
-                    Ctrl+K → command palette &nbsp;·&nbsp; Alt+F → focus mode
-                  </p>
-                </div>
-              )}
-
-              {/* Wallpaper tab */}
-              {settingsTab === "wallpaper" && (
-                <div className="space-y-4">
-                  {/* Gallery grid */}
-                  <div className="grid grid-cols-4 gap-2">
-                    {BG_GALLERY.map((bg, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setBackgroundIndex(i);
-                          setBackgroundUrl("");
-                          setCustomBgInput("");
+                    {/* Custom URL */}
+                    <div className="pt-3 border-t border-white/5">
+                      <p className="text-[11px] text-foreground/30 mb-2">Or paste a custom image URL</p>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (customBgInput.trim()) {
+                            setBackgroundUrl(customBgInput.trim());
+                          }
                         }}
-                        className={`relative aspect-[16/10] rounded-xl overflow-hidden cursor-pointer group transition-all ${
-                          !backgroundUrl && backgroundIndex === i
-                            ? "ring-2 ring-accent ring-offset-1 ring-offset-background"
-                            : "opacity-60 hover:opacity-100"
-                        }`}
-                        title={bg.label}
+                        className="flex gap-2"
                       >
-                        <img
-                          src={bg.url}
-                          alt={bg.label}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
+                        <input
+                          type="text"
+                          value={customBgInput}
+                          onChange={(e) => setCustomBgInput(e.target.value)}
+                          placeholder="https://..."
+                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none focus:border-white/20"
                         />
-                      </button>
-                    ))}
-                  </div>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs hover:bg-white/10 transition-colors cursor-pointer"
+                        >
+                          Apply
+                        </button>
+                      </form>
+                      {backgroundUrl && (
+                        <button
+                          onClick={() => {
+                            setBackgroundUrl("");
+                            setCustomBgInput("");
+                          }}
+                          className="text-[11px] text-foreground/30 mt-2 hover:text-foreground/50 cursor-pointer transition-colors"
+                        >
+                          ← Reset to gallery
+                        </button>
+                      )}
+                    </div>
 
-                  {/* Custom URL */}
-                  <div className="pt-2 border-t border-white/5">
-                    <p className="text-[11px] text-foreground/30 mb-2">Or paste a custom image URL</p>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (customBgInput.trim()) {
-                          setBackgroundUrl(customBgInput.trim());
-                        }
-                      }}
-                      className="flex gap-2"
-                    >
-                      <input
-                        type="text"
-                        value={customBgInput}
-                        onChange={(e) => setCustomBgInput(e.target.value)}
-                        placeholder="https://..."
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none focus:border-white/20"
-                      />
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs hover:bg-white/10 transition-colors cursor-pointer"
-                      >
-                        Apply
-                      </button>
-                    </form>
-                    {backgroundUrl && (
-                      <button
-                        onClick={() => {
-                          setBackgroundUrl("");
-                          setCustomBgInput("");
-                        }}
-                        className="text-[11px] text-foreground/30 mt-2 hover:text-foreground/50 cursor-pointer transition-colors"
-                      >
-                        ← Reset to gallery
-                      </button>
-                    )}
+                    {/* Feed Interests */}
+                    <div className="pt-3 border-t border-white/5">
+                      <p className="text-[11px] text-foreground/30 mb-2.5">Discover Feed Interests</p>
+                      <div className="flex flex-wrap gap-2">
+                        {interestOptions.map((opt) => {
+                          const active = interests.includes(opt.id);
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => handleToggleInterest(opt.id)}
+                              className={`px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer border ${
+                                active
+                                  ? "bg-white/10 border-white/10 text-foreground"
+                                  : "bg-transparent border-white/5 text-foreground/35 hover:text-foreground/50 hover:border-white/10"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              {/* Reset configuration footer */}
+              <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center shrink-0">
+                <span className="text-[10px] text-foreground/25">Version 3.2.0 (Discover Feed)</span>
+                <button
+                  onClick={() => {
+                    if (confirm("Restore factory settings and clear all configurations? This cannot be undone.")) {
+                      resetConfig();
+                      setShowSettings(false);
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-red-950/20 border border-red-500/15 rounded-xl text-xs text-red-400 hover:bg-red-950/40 hover:border-red-500/30 transition-all cursor-pointer"
+                >
+                  Reset Settings
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

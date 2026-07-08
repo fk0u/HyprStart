@@ -39,6 +39,11 @@ export interface HyprState {
   weatherCity: string;
   showCosmosParticles: boolean;
   use24hFormat: boolean;
+  // Personalization
+  userName: string;
+  focusGoal: string;
+  backgroundUrl: string; // empty = use default from gallery
+  backgroundIndex: number; // index into BG_GALLERY
 }
 
 export interface HyprContextType {
@@ -59,6 +64,11 @@ export interface HyprContextType {
   importConfig: (config: string) => boolean;
   exportConfig: () => void;
   resetConfig: () => void;
+  // Personalization
+  setUserName: (name: string) => void;
+  setFocusGoal: (goal: string) => void;
+  setBackgroundUrl: (url: string) => void;
+  setBackgroundIndex: (index: number) => void;
 }
 
 const DEFAULT_WIDGETS: WidgetState[] = [
@@ -73,21 +83,18 @@ const DEFAULT_WIDGETS: WidgetState[] = [
 const DEFAULT_BOOKMARKS: Bookmark[] = [
   { id: "1", title: "GitHub", url: "https://github.com" },
   { id: "2", title: "Reddit", url: "https://reddit.com" },
-  { id: "3", title: "Tailwind Docs", url: "https://tailwindcss.com/docs" },
-  { id: "4", title: "Next.js Docs", url: "https://nextjs.org/docs" },
-  { id: "5", title: "Arch Wiki", url: "https://wiki.archlinux.org" },
+  { id: "3", title: "YouTube", url: "https://youtube.com" },
+  { id: "4", title: "Twitter", url: "https://twitter.com" },
+  { id: "5", title: "Google", url: "https://google.com" },
 ];
 
 const DEFAULT_TODOS: TodoItem[] = [
-  { id: "1", text: "Configure Nord theme parameters", completed: false },
-  { id: "2", text: "Commit dotfiles to GitHub repo", completed: true },
-  { id: "3", text: "Rearrange layout windows", completed: false },
+  { id: "1", text: "Set up your name (click the greeting!)", completed: false },
+  { id: "2", text: "Choose a wallpaper in settings", completed: false },
+  { id: "3", text: "Set your daily focus goal", completed: false },
 ];
 
-const DEFAULT_SNIPPETS: CodeSnippet[] = [
-  { id: "1", title: "Arch System Update", code: "sudo pacman -Syu", lang: "bash" },
-  { id: "2", title: "Tailwind Gradient Button", code: "<button className=\"bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-medium px-4 py-2 rounded shadow-lg transition-all duration-300\">Launch</button>", lang: "jsx" },
-];
+const DEFAULT_SNIPPETS: CodeSnippet[] = [];
 
 const INITIAL_STATE: HyprState = {
   theme: "tokyo-night",
@@ -95,37 +102,45 @@ const INITIAL_STATE: HyprState = {
   bookmarks: DEFAULT_BOOKMARKS,
   todoList: DEFAULT_TODOS,
   snippets: DEFAULT_SNIPPETS,
-  weatherCity: "Neo-Tokyo",
+  weatherCity: "Jakarta",
   showCosmosParticles: true,
-  use24hFormat: true,
+  use24hFormat: false,
+  userName: "",
+  focusGoal: "",
+  backgroundUrl: "",
+  backgroundIndex: 0,
 };
 
 const HyprContext = createContext<HyprContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = "hyprstart_dotfiles";
 
+const mergeState = (parsed: Record<string, unknown>): HyprState => ({
+  theme: (parsed.theme as string) || INITIAL_STATE.theme,
+  widgets: Array.isArray(parsed.widgets) && parsed.widgets.length ? parsed.widgets : INITIAL_STATE.widgets,
+  bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks : INITIAL_STATE.bookmarks,
+  todoList: Array.isArray(parsed.todoList) ? parsed.todoList : INITIAL_STATE.todoList,
+  snippets: Array.isArray(parsed.snippets) ? parsed.snippets : INITIAL_STATE.snippets,
+  weatherCity: (parsed.weatherCity as string) || INITIAL_STATE.weatherCity,
+  showCosmosParticles: parsed.showCosmosParticles !== undefined ? (parsed.showCosmosParticles as boolean) : INITIAL_STATE.showCosmosParticles,
+  use24hFormat: parsed.use24hFormat !== undefined ? (parsed.use24hFormat as boolean) : INITIAL_STATE.use24hFormat,
+  userName: (parsed.userName as string) ?? INITIAL_STATE.userName,
+  focusGoal: (parsed.focusGoal as string) ?? INITIAL_STATE.focusGoal,
+  backgroundUrl: (parsed.backgroundUrl as string) ?? INITIAL_STATE.backgroundUrl,
+  backgroundIndex: typeof parsed.backgroundIndex === "number" ? parsed.backgroundIndex : INITIAL_STATE.backgroundIndex,
+});
+
 export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<HyprState>(INITIAL_STATE);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load state from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Deep merge logic to prevent crashes if schemas change
         setTimeout(() => {
-          setState({
-            theme: parsed.theme || INITIAL_STATE.theme,
-            widgets: parsed.widgets?.length ? parsed.widgets : INITIAL_STATE.widgets,
-            bookmarks: parsed.bookmarks || INITIAL_STATE.bookmarks,
-            todoList: parsed.todoList || INITIAL_STATE.todoList,
-            snippets: parsed.snippets || INITIAL_STATE.snippets,
-            weatherCity: parsed.weatherCity || INITIAL_STATE.weatherCity,
-            showCosmosParticles: parsed.showCosmosParticles !== undefined ? parsed.showCosmosParticles : INITIAL_STATE.showCosmosParticles,
-            use24hFormat: parsed.use24hFormat !== undefined ? parsed.use24hFormat : INITIAL_STATE.use24hFormat,
-          });
+          setState(mergeState(parsed));
           setIsLoaded(true);
         }, 0);
         return;
@@ -136,136 +151,55 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTimeout(() => setIsLoaded(true), 0);
   }, []);
 
-  // Save state to localStorage and document element attributes
   useEffect(() => {
     if (!isLoaded) return;
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
-      // Update data-theme on html element
       document.documentElement.setAttribute("data-theme", state.theme);
     } catch (e) {
       console.error("Failed to save local config", e);
     }
   }, [state, isLoaded]);
 
-  const setTheme = (theme: string) => {
-    setState((prev) => ({ ...prev, theme }));
-  };
-
-  const toggleWidget = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      widgets: prev.widgets.map((w) => (w.id === id ? { ...w, visible: !w.visible } : w)),
-    }));
-  };
-
-  const updateWidgetPosition = (id: string, x: number, y: number, w?: number, h?: number) => {
-    setState((prev) => ({
-      ...prev,
-      widgets: prev.widgets.map((w_item) =>
-        w_item.id === id
-          ? {
-              ...w_item,
-              x,
-              y,
-              w: w !== undefined ? w : w_item.w,
-              h: h !== undefined ? h : w_item.h,
-            }
-          : w_item
+  const setTheme = (theme: string) => setState((p) => ({ ...p, theme }));
+  const toggleWidget = (id: string) =>
+    setState((p) => ({ ...p, widgets: p.widgets.map((w) => (w.id === id ? { ...w, visible: !w.visible } : w)) }));
+  const updateWidgetPosition = (id: string, x: number, y: number, w?: number, h?: number) =>
+    setState((p) => ({
+      ...p,
+      widgets: p.widgets.map((wi) =>
+        wi.id === id ? { ...wi, x, y, w: w !== undefined ? w : wi.w, h: h !== undefined ? h : wi.h } : wi
       ),
     }));
-  };
-
   const addBookmark = (title: string, url: string) => {
     let cleanUrl = url;
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      cleanUrl = `https://${url}`;
-    }
-    setState((prev) => ({
-      ...prev,
-      bookmarks: [
-        ...prev.bookmarks,
-        { id: Date.now().toString(), title, url: cleanUrl },
-      ],
-    }));
+    if (!url.startsWith("http://") && !url.startsWith("https://")) cleanUrl = `https://${url}`;
+    setState((p) => ({ ...p, bookmarks: [...p.bookmarks, { id: Date.now().toString(), title, url: cleanUrl }] }));
   };
+  const deleteBookmark = (id: string) => setState((p) => ({ ...p, bookmarks: p.bookmarks.filter((b) => b.id !== id) }));
+  const addTodo = (text: string) =>
+    setState((p) => ({ ...p, todoList: [...p.todoList, { id: Date.now().toString(), text, completed: false }] }));
+  const toggleTodo = (id: string) =>
+    setState((p) => ({ ...p, todoList: p.todoList.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)) }));
+  const deleteTodo = (id: string) => setState((p) => ({ ...p, todoList: p.todoList.filter((t) => t.id !== id) }));
+  const addSnippet = (title: string, code: string, lang: string) =>
+    setState((p) => ({ ...p, snippets: [...p.snippets, { id: Date.now().toString(), title, code, lang: lang || "txt" }] }));
+  const deleteSnippet = (id: string) => setState((p) => ({ ...p, snippets: p.snippets.filter((s) => s.id !== id) }));
+  const setWeatherCity = (weatherCity: string) => setState((p) => ({ ...p, weatherCity }));
+  const toggleCosmosParticles = () => setState((p) => ({ ...p, showCosmosParticles: !p.showCosmosParticles }));
+  const setUse24hFormat = (val: boolean) => setState((p) => ({ ...p, use24hFormat: val }));
 
-  const deleteBookmark = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      bookmarks: prev.bookmarks.filter((b) => b.id !== id),
-    }));
-  };
-
-  const addTodo = (text: string) => {
-    setState((prev) => ({
-      ...prev,
-      todoList: [
-        ...prev.todoList,
-        { id: Date.now().toString(), text, completed: false },
-      ],
-    }));
-  };
-
-  const toggleTodo = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      todoList: prev.todoList.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
-    }));
-  };
-
-  const deleteTodo = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      todoList: prev.todoList.filter((t) => t.id !== id),
-    }));
-  };
-
-  const addSnippet = (title: string, code: string, lang: string) => {
-    setState((prev) => ({
-      ...prev,
-      snippets: [
-        ...prev.snippets,
-        { id: Date.now().toString(), title, code, lang: lang || "txt" },
-      ],
-    }));
-  };
-
-  const deleteSnippet = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      snippets: prev.snippets.filter((s) => s.id !== id),
-    }));
-  };
-
-  const setWeatherCity = (weatherCity: string) => {
-    setState((prev) => ({ ...prev, weatherCity }));
-  };
-
-  const toggleCosmosParticles = () => {
-    setState((prev) => ({ ...prev, showCosmosParticles: !prev.showCosmosParticles }));
-  };
-
-  const setUse24hFormat = (val: boolean) => {
-    setState((prev) => ({ ...prev, use24hFormat: val }));
-  };
+  // Personalization
+  const setUserName = (userName: string) => setState((p) => ({ ...p, userName }));
+  const setFocusGoal = (focusGoal: string) => setState((p) => ({ ...p, focusGoal }));
+  const setBackgroundUrl = (backgroundUrl: string) => setState((p) => ({ ...p, backgroundUrl }));
+  const setBackgroundIndex = (backgroundIndex: number) => setState((p) => ({ ...p, backgroundIndex }));
 
   const importConfig = (configJson: string): boolean => {
     try {
       const parsed = JSON.parse(configJson);
-      // Basic validation
       if (typeof parsed !== "object" || parsed === null) return false;
-      
-      setState({
-        theme: parsed.theme || INITIAL_STATE.theme,
-        widgets: Array.isArray(parsed.widgets) ? parsed.widgets : INITIAL_STATE.widgets,
-        bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks : INITIAL_STATE.bookmarks,
-        todoList: Array.isArray(parsed.todoList) ? parsed.todoList : INITIAL_STATE.todoList,
-        snippets: Array.isArray(parsed.snippets) ? parsed.snippets : INITIAL_STATE.snippets,
-        weatherCity: parsed.weatherCity || INITIAL_STATE.weatherCity,
-        showCosmosParticles: parsed.showCosmosParticles !== undefined ? parsed.showCosmosParticles : INITIAL_STATE.showCosmosParticles,
-        use24hFormat: parsed.use24hFormat !== undefined ? parsed.use24hFormat : INITIAL_STATE.use24hFormat,
-      });
+      setState(mergeState(parsed));
       return true;
     } catch (e) {
       console.error("Failed to import config", e);
@@ -277,47 +211,27 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const dataStr = JSON.stringify(state, null, 2);
       const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-      
-      const exportFileDefaultName = `hyprstart_config_${state.theme}.json`;
-      
       const linkElement = document.createElement("a");
       linkElement.setAttribute("href", dataUri);
-      linkElement.setAttribute("download", exportFileDefaultName);
+      linkElement.setAttribute("download", `hyprstart_config_${state.theme}.json`);
       linkElement.click();
     } catch (e) {
       console.error("Failed to export config", e);
     }
   };
 
-  const resetConfig = () => {
-    setState(INITIAL_STATE);
-  };
+  const resetConfig = () => setState(INITIAL_STATE);
 
-  // Wait until state has loaded from localStorage to prevent flash of initial values
-  if (!isLoaded) {
-    return null; 
-  }
+  if (!isLoaded) return null;
 
   return (
     <HyprContext.Provider
       value={{
-        state,
-        setTheme,
-        toggleWidget,
-        updateWidgetPosition,
-        addBookmark,
-        deleteBookmark,
-        addTodo,
-        toggleTodo,
-        deleteTodo,
-        addSnippet,
-        deleteSnippet,
-        setWeatherCity,
-        toggleCosmosParticles,
-        setUse24hFormat,
-        importConfig,
-        exportConfig,
-        resetConfig,
+        state, setTheme, toggleWidget, updateWidgetPosition,
+        addBookmark, deleteBookmark, addTodo, toggleTodo, deleteTodo,
+        addSnippet, deleteSnippet, setWeatherCity, toggleCosmosParticles,
+        setUse24hFormat, importConfig, exportConfig, resetConfig,
+        setUserName, setFocusGoal, setBackgroundUrl, setBackgroundIndex,
       }}
     >
       {children}
@@ -327,8 +241,6 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useHyprStore = () => {
   const context = useContext(HyprContext);
-  if (context === undefined) {
-    throw new Error("useHyprStore must be used within a HyprProvider");
-  }
+  if (context === undefined) throw new Error("useHyprStore must be used within a HyprProvider");
   return context;
 };

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useHyprStore } from "@/hooks/useHyprStore";
 import { Terminal, Search, HelpCircle, Layout, Palette, FileInput, FileOutput, ShieldAlert } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { fuzzyMatch } from "@/lib/levenshtein";
 
 interface CommandSuggestion {
   id: string;
@@ -292,26 +293,36 @@ export const HyprPalette: React.FC = () => {
     }
   ];
 
-  // Advanced Fuzzy Search Filtering
+  // Advanced Levenshtein-based Fuzzy Search Filtering
   const filteredSuggestions = suggestions.filter((s) => {
     if (!inputVal) return true;
     const query = inputVal.toLowerCase().trim();
 
     // Strip starting "/" or ":" characters
     const normalizedQuery = query.replace(/^[\/:]/, "").replace(/\s+/g, " ");
-    const normalizedName = s.name.replace(/^[\/:]/, "").replace(/-/g, "").trim();
+    
+    // Extract base command word (e.g. "theme" from "/theme [theme_name]")
+    const cleanCmdName = s.name.replace(/^[\/:]/, "").split(" ")[0] || "";
+    const cleanUserCmd = normalizedQuery.split(" ")[0] || "";
 
-    // Direct substring checks
-    if (normalizedName.includes(normalizedQuery) || s.desc.toLowerCase().includes(normalizedQuery)) {
-      return true;
+    // 1. Check if the user command word matches the suggestion command word using Levenshtein distance
+    const isCmdFuzzyMatch = fuzzyMatch(cleanUserCmd, cleanCmdName);
+
+    // 2. Check if name or description contains the query directly
+    const isNameSubstring = s.name.toLowerCase().includes(normalizedQuery);
+    const isDescSubstring = s.desc.toLowerCase().includes(normalizedQuery);
+
+    // 3. Match subcommands fuzzily if multiple words are typed (e.g. "/widget add" vs "/wdget ad")
+    const userWords = normalizedQuery.split(" ");
+    const suggestionWords = s.name.replace(/^[\/:]/, "").split(" ");
+    if (userWords.length > 1 && suggestionWords.length > 1) {
+      const userSub = userWords[1] || "";
+      const suggSub = suggestionWords[1] || "";
+      const isSubFuzzyMatch = fuzzyMatch(userSub, suggSub);
+      return fuzzyMatch(userWords[0] || "", suggestionWords[0] || "") && isSubFuzzyMatch;
     }
 
-    // Split words for fuzzy matching
-    const queryWords = normalizedQuery.split(" ");
-    return queryWords.every((word) => 
-      s.name.toLowerCase().includes(word) ||
-      s.desc.toLowerCase().includes(word)
-    );
+    return isCmdFuzzyMatch || isNameSubstring || isDescSubstring;
   });
 
   // Handle hotkeys (Ctrl + K, Alt + D, Escape)

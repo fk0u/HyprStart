@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HyprStart // Cosmic Workstation",
-  description: "A database-free, highly themeable, modular browser start page styled with an immersive space cyber-aesthetic.",
+  title: "HyprStart",
+  description: "A clean, modular browser start page.",
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-300">
+      <body className="h-full">
         {children}
       </body>
     </html>

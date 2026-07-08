@@ -24,6 +24,7 @@ export const HyprPalette: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const {
+    state,
     setTheme,
     toggleWidget,
     addBookmark,
@@ -34,129 +35,211 @@ export const HyprPalette: React.FC = () => {
     toggleCosmosParticles
   } = useHyprStore();
 
+  const showMessage = (text: string, type: "success" | "error" | "info") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+
+
+  // Setter helper for widget state
+  const setWidgetVisibility = (widgetId: string, visible: boolean, name: string) => {
+    if (widgetId === "cosmos") {
+      if (state.showCosmosParticles !== visible) {
+        toggleCosmosParticles();
+      }
+      showMessage(`${name} background ${visible ? "enabled" : "disabled"}`, "info");
+      return;
+    }
+
+    const widget = state.widgets.find((w) => w.id === widgetId);
+    if (widget && widget.visible !== visible) {
+      toggleWidget(widgetId);
+      showMessage(`Widget "${name}" ${visible ? "revealed" : "hidden"}`, "success");
+    } else {
+      showMessage(`Widget "${name}" is already ${visible ? "visible" : "hidden"}`, "info");
+    }
+  };
+
   // Suggestion Definitions
   const suggestions: CommandSuggestion[] = [
     {
       id: "theme-tokyo",
-      name: ":theme tokyo-night",
-      desc: "Switch accent and background colors to Tokyo Night style",
-      example: ":theme tokyo-night",
+      name: "/theme tokyonight",
+      desc: "Switch accent colors to Tokyo Night style",
+      example: "/theme tokyonight",
       icon: <Palette size={14} className="text-cyan-400" />,
-      action: () => { setTheme("tokyo-night"); showMessage("Theme set: Tokyo Night", "success"); }
+      action: () => { setTheme("tokyo-night"); showMessage("Theme: Tokyo Night active", "success"); }
     },
     {
       id: "theme-nord",
-      name: ":theme nord",
-      desc: "Switch colors to icy frost Nord architecture",
-      example: ":theme nord",
+      name: "/theme nord",
+      desc: "Switch accent colors to icy arctic Nord architecture",
+      example: "/theme nord",
       icon: <Palette size={14} className="text-blue-300" />,
-      action: () => { setTheme("nord"); showMessage("Theme set: Nord", "success"); }
+      action: () => { setTheme("nord"); showMessage("Theme: Nord active", "success"); }
     },
     {
       id: "theme-cyber",
-      name: ":theme cyber-cyan",
-      desc: "Switch colors to neon Cyan high contrast terminal",
-      example: ":theme cyber-cyan",
+      name: "/theme cybercyan",
+      desc: "Switch accent colors to neon Cyan high-contrast theme",
+      example: "/theme cybercyan",
       icon: <Palette size={14} className="text-cyan-300" />,
-      action: () => { setTheme("cyber-cyan"); showMessage("Theme set: Cyber-Cyan", "success"); }
+      action: () => { setTheme("cyber-cyan"); showMessage("Theme: Cyber-Cyan active", "success"); }
     },
     {
       id: "theme-gruvbox",
-      name: ":theme gruvbox",
-      desc: "Switch colors to vintage gold Gruvbox terminal",
-      example: ":theme gruvbox",
+      name: "/theme gruvbox",
+      desc: "Switch accent colors to vintage gold Gruvbox theme",
+      example: "/theme gruvbox",
       icon: <Palette size={14} className="text-amber-400" />,
-      action: () => { setTheme("gruvbox"); showMessage("Theme set: Gruvbox", "success"); }
+      action: () => { setTheme("gruvbox"); showMessage("Theme: Gruvbox active", "success"); }
     },
     {
-      id: "toggle-clock",
-      name: ":widget clock",
-      desc: "Toggle digital millisecond clock widget visibility",
-      example: ":widget clock",
+      id: "widget-add-clock",
+      name: "/widget add clock",
+      desc: "Reveal digital millisecond clock widget",
+      example: "/widget add clock",
       icon: <Layout size={14} className="text-accent" />,
-      action: () => toggleWidget("clock")
+      action: () => setWidgetVisibility("clock", true, "Clock")
     },
     {
-      id: "toggle-todo",
-      name: ":widget todo",
-      desc: "Toggle task manager checklist widget visibility",
-      example: ":widget todo",
+      id: "widget-remove-clock",
+      name: "/widget remove clock",
+      desc: "Hide digital millisecond clock widget",
+      example: "/widget remove clock",
+      icon: <Layout size={14} className="text-accent/60" />,
+      action: () => setWidgetVisibility("clock", false, "Clock")
+    },
+    {
+      id: "widget-add-todo",
+      name: "/widget add todo",
+      desc: "Reveal tasks checklist manager widget",
+      example: "/widget add todo",
       icon: <Layout size={14} className="text-accent" />,
-      action: () => toggleWidget("todo")
+      action: () => setWidgetVisibility("todo", true, "Checklist")
     },
     {
-      id: "toggle-bookmarks",
-      name: ":widget bookmarks",
-      desc: "Toggle Quick Links bookmark launcher widget",
-      example: ":widget bookmarks",
+      id: "widget-remove-todo",
+      name: "/widget remove todo",
+      desc: "Hide tasks checklist manager widget",
+      example: "/widget remove todo",
+      icon: <Layout size={14} className="text-accent/60" />,
+      action: () => setWidgetVisibility("todo", false, "Checklist")
+    },
+    {
+      id: "widget-add-bookmarks",
+      name: "/widget add bookmarks",
+      desc: "Reveal Quick Links bookmarks tile launcher",
+      example: "/widget add bookmarks",
       icon: <Layout size={14} className="text-accent" />,
-      action: () => toggleWidget("bookmarks")
+      action: () => setWidgetVisibility("bookmarks", true, "Bookmarks")
     },
     {
-      id: "toggle-snippets",
-      name: ":widget snippets",
-      desc: "Toggle Code Snippets board widget visibility",
-      example: ":widget snippets",
+      id: "widget-remove-bookmarks",
+      name: "/widget remove bookmarks",
+      desc: "Hide Quick Links bookmarks tile launcher",
+      example: "/widget remove bookmarks",
+      icon: <Layout size={14} className="text-accent/60" />,
+      action: () => setWidgetVisibility("bookmarks", false, "Bookmarks")
+    },
+    {
+      id: "widget-add-snippets",
+      name: "/widget add snippets",
+      desc: "Reveal developer code snippets storage notes",
+      example: "/widget add snippets",
       icon: <Layout size={14} className="text-accent" />,
-      action: () => toggleWidget("snippets")
+      action: () => setWidgetVisibility("snippets", true, "Snippets")
     },
     {
-      id: "toggle-crypto",
-      name: ":widget crypto",
-      desc: "Toggle real-time simulated crypto sparklines widget",
-      example: ":widget crypto",
+      id: "widget-remove-snippets",
+      name: "/widget remove snippets",
+      desc: "Hide developer code snippets storage notes",
+      example: "/widget remove snippets",
+      icon: <Layout size={14} className="text-accent/60" />,
+      action: () => setWidgetVisibility("snippets", false, "Snippets")
+    },
+    {
+      id: "widget-add-crypto",
+      name: "/widget add crypto",
+      desc: "Reveal live simulated crypto sparkline chart",
+      example: "/widget add crypto",
       icon: <Layout size={14} className="text-accent" />,
-      action: () => toggleWidget("crypto")
+      action: () => setWidgetVisibility("crypto", true, "Crypto Sparklines")
     },
     {
-      id: "toggle-weather",
-      name: ":widget weather",
-      desc: "Toggle meteorological forecast weather widget",
-      example: ":widget weather",
+      id: "widget-remove-crypto",
+      name: "/widget remove crypto",
+      desc: "Hide live simulated crypto sparkline chart",
+      example: "/widget remove crypto",
+      icon: <Layout size={14} className="text-accent/60" />,
+      action: () => setWidgetVisibility("crypto", false, "Crypto Sparklines")
+    },
+    {
+      id: "widget-add-weather",
+      name: "/widget add weather",
+      desc: "Reveal local meteorology climate report widget",
+      example: "/widget add weather",
       icon: <Layout size={14} className="text-accent" />,
-      action: () => toggleWidget("weather")
+      action: () => setWidgetVisibility("weather", true, "Weather")
     },
     {
-      id: "toggle-cosmos",
-      name: ":widget cosmos",
-      desc: "Toggle Canvas background stars and nebula parallax",
-      example: ":widget cosmos",
+      id: "widget-remove-weather",
+      name: "/widget remove weather",
+      desc: "Hide local meteorology climate report widget",
+      example: "/widget remove weather",
+      icon: <Layout size={14} className="text-accent/60" />,
+      action: () => setWidgetVisibility("weather", false, "Weather")
+    },
+    {
+      id: "widget-add-cosmos",
+      name: "/widget add cosmos",
+      desc: "Enable starry background drift particles engine",
+      example: "/widget add cosmos",
       icon: <Layout size={14} className="text-accent" />,
-      action: () => { toggleCosmosParticles(); showMessage("Toggled background engine", "info"); }
+      action: () => setWidgetVisibility("cosmos", true, "Cosmos Engine")
     },
     {
-      id: "add-todo",
-      name: ":add-todo [text]",
-      desc: "Insert new target item into your checklist",
-      example: ":add-todo Code next module",
+      id: "widget-remove-cosmos",
+      name: "/widget remove cosmos",
+      desc: "Disable starry background drift particles engine",
+      example: "/widget remove cosmos",
+      icon: <Layout size={14} className="text-accent/60" />,
+      action: () => setWidgetVisibility("cosmos", false, "Cosmos Engine")
+    },
+    {
+      id: "add-todo-item",
+      name: "/add-todo [text]",
+      desc: "Insert new target item into checklist",
+      example: "/add-todo Sync dotfiles",
       icon: <HelpCircle size={14} className="text-emerald-400" />,
       action: (args) => {
-        if (!args) { showMessage("Syntax: :add-todo <task name>", "error"); return; }
+        if (!args) { showMessage("Syntax: /add-todo <task name>", "error"); return; }
         addTodo(args);
-        showMessage(`Task added: "${args}"`, "success");
+        showMessage(`Added task: "${args}"`, "success");
       }
     },
     {
-      id: "add-bookmark",
-      name: ":add-bookmark [title] [url]",
-      desc: "Insert quick-link bookmark launcher shortcut",
-      example: ":add-bookmark Google google.com",
+      id: "add-bookmark-item",
+      name: "/add-bookmark [title] [url]",
+      desc: "Insert quick-link bookmark launcher tile",
+      example: "/add-bookmark GitHub github.com",
       icon: <HelpCircle size={14} className="text-emerald-400" />,
       action: (args) => {
-        if (!args) { showMessage("Syntax: :add-bookmark <title> <url>", "error"); return; }
+        if (!args) { showMessage("Syntax: /add-bookmark <title> <url>", "error"); return; }
         const parts = args.split(" ");
         if (parts.length < 2) { showMessage("Provide both Title and URL", "error"); return; }
         const title = parts[0];
         const url = parts.slice(1).join("");
         addBookmark(title, url);
-        showMessage(`Bookmark "${title}" saved`, "success");
+        showMessage(`Saved bookmark "${title}"`, "success");
       }
     },
     {
       id: "import-dotfiles",
-      name: ":import",
-      desc: "Restore workspace layout using config.json file",
-      example: ":import",
+      name: "/import-config",
+      desc: "Restore workspace layout config from JSON dotfile",
+      example: "/import-config",
       icon: <FileInput size={14} className="text-orange-400" />,
       action: () => {
         const el = document.getElementById("hypr-import-file-input") as HTMLInputElement | null;
@@ -165,9 +248,9 @@ export const HyprPalette: React.FC = () => {
     },
     {
       id: "export-dotfiles",
-      name: ":export",
-      desc: "Download current workspace layout configuration",
-      example: ":export",
+      name: "/export-config",
+      desc: "Download current layout coordinates config as JSON",
+      example: "/export-config",
       icon: <FileOutput size={14} className="text-sky-400" />,
       action: () => {
         exportConfig();
@@ -175,21 +258,21 @@ export const HyprPalette: React.FC = () => {
       }
     },
     {
-      id: "reset-system",
-      name: ":reset",
-      desc: "Clear local storage config and reload factory presets",
-      example: ":reset",
+      id: "clear-all-reset",
+      name: "/clear-all",
+      desc: "Clear local settings and restore default startpage configuration",
+      example: "/clear-all",
       icon: <ShieldAlert size={14} className="text-rose-400 animate-pulse" />,
       action: () => {
         resetConfig();
-        showMessage("Workspace restored to default", "info");
+        showMessage("Workspace restored to factory layouts", "info");
       }
     },
     {
       id: "search-google",
       name: "/g [query]",
-      desc: "Initiate Google search in a new web workspace tab",
-      example: "/g nextjs route handlers",
+      desc: "Initiate search query in separate Google tab",
+      example: "/g tailwindcss documentation v4",
       icon: <Search size={14} className="text-teal-400" />,
       action: (args) => {
         if (!args) { showMessage("Enter search query", "error"); return; }
@@ -199,8 +282,8 @@ export const HyprPalette: React.FC = () => {
     {
       id: "search-github",
       name: "/git [query]",
-      desc: "Query repository codebases on GitHub search tab",
-      example: "/git ant-design",
+      desc: "Query repositories on GitHub Search tab",
+      example: "/git hyprland dotfiles",
       icon: <Search size={14} className="text-slate-300" />,
       action: (args) => {
         if (!args) { showMessage("Enter repository search text", "error"); return; }
@@ -209,22 +292,26 @@ export const HyprPalette: React.FC = () => {
     }
   ];
 
-  const showMessage = (text: string, type: "success" | "error" | "info") => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage(null), 3000);
-  };
-
-  // Filtered Suggestions based on input
+  // Advanced Fuzzy Search Filtering
   const filteredSuggestions = suggestions.filter((s) => {
     if (!inputVal) return true;
     const query = inputVal.toLowerCase().trim();
-    if (query.startsWith(":")) {
-      return s.name.startsWith(":") && s.name.toLowerCase().includes(query.split(" ")[0]);
+
+    // Strip starting "/" or ":" characters
+    const normalizedQuery = query.replace(/^[\/:]/, "").replace(/\s+/g, " ");
+    const normalizedName = s.name.replace(/^[\/:]/, "").replace(/-/g, "").trim();
+
+    // Direct substring checks
+    if (normalizedName.includes(normalizedQuery) || s.desc.toLowerCase().includes(normalizedQuery)) {
+      return true;
     }
-    if (query.startsWith("/")) {
-      return s.name.startsWith("/") && s.name.toLowerCase().includes(query.split(" ")[0]);
-    }
-    return s.name.toLowerCase().includes(query) || s.desc.toLowerCase().includes(query);
+
+    // Split words for fuzzy matching
+    const queryWords = normalizedQuery.split(" ");
+    return queryWords.every((word) => 
+      s.name.toLowerCase().includes(word) ||
+      s.desc.toLowerCase().includes(word)
+    );
   });
 
   // Handle hotkeys (Ctrl + K, Alt + D, Escape)
@@ -255,18 +342,29 @@ export const HyprPalette: React.FC = () => {
     const trimmed = inputVal.trim();
     if (!trimmed) return;
 
-    // Check if the current query maps to a selected suggestion
     if (filteredSuggestions.length > 0 && selectedIndex < filteredSuggestions.length) {
       const selected = filteredSuggestions[selectedIndex];
       
-      // Extract arguments if query matches command name prefix
+      // Determine arguments
       let args = "";
-      const cmdNamePrefix = selected.name.split(" ")[0]; // e.g., ":theme" or ":add-todo"
-      if (trimmed.startsWith(cmdNamePrefix)) {
-        args = trimmed.slice(cmdNamePrefix.length).trim();
+      const cmdNameWords = selected.name.split(" ");
+      const cmdBasePrefix = cmdNameWords[0]; // e.g. "/theme" or "/widget"
+      
+      // Handle multi-word commands (like "/widget add clock" or "/widget remove clock")
+      if (cmdNameWords.length > 1 && cmdNameWords[1] !== "[text]" && cmdNameWords[1] !== "[title]") {
+        const fullPrefix = cmdNameWords.slice(0, -1).join(" "); // e.g. "/widget add" or "/widget remove"
+        const normalizedInput = trimmed.replace(/^[:\/]/, "/");
+        if (normalizedInput.startsWith(fullPrefix)) {
+          args = normalizedInput.slice(fullPrefix.length).trim();
+        }
       } else {
-        // Fallback: if user typed something custom, treat the query as arguments
-        args = trimmed;
+        // Single word command prefix (e.g. "/g" or "/add-todo")
+        const normalizedInput = trimmed.replace(/^[:\/]/, "/");
+        if (normalizedInput.startsWith(cmdBasePrefix)) {
+          args = normalizedInput.slice(cmdBasePrefix.length).trim();
+        } else {
+          args = trimmed;
+        }
       }
       
       selected.action(args);
@@ -275,7 +373,7 @@ export const HyprPalette: React.FC = () => {
       return;
     }
 
-    // Default Fallback: If no matches, search Google
+    // Default Fallback: Search Google
     window.open(`https://google.com/search?q=${encodeURIComponent(trimmed)}`, "_blank");
     setInputVal("");
     setIsOpen(false);
@@ -305,7 +403,7 @@ export const HyprPalette: React.FC = () => {
       if (success) {
         showMessage("Configuration imported successfully!", "success");
       } else {
-        showMessage("Failed to parse config file.", "error");
+        showMessage("Failed to parse configuration file.", "error");
       }
     };
     reader.readAsText(file);
@@ -314,6 +412,7 @@ export const HyprPalette: React.FC = () => {
 
   return (
     <>
+      {/* Hidden File Input for config imports */}
       <input
         id="hypr-import-file-input"
         type="file"
@@ -378,8 +477,8 @@ export const HyprPalette: React.FC = () => {
                     setSelectedIndex(0);
                   }}
                   onKeyDown={handleKeyDownInput}
-                  placeholder="Type a command (:theme, :widget) or search query..."
-                  className="flex-1 bg-transparent border-none outline-none text-foreground text-xs placeholder:text-text-muted focus:ring-0"
+                  placeholder="Type a command (/theme, /widget) or search query..."
+                  className="flex-1 bg-transparent border-none outline-none text-foreground text-xs placeholder:text-text-muted focus:ring-0 select-text"
                 />
                 <span className="text-[9px] text-text-muted select-none border border-card-border/50 px-1.5 py-0.5 rounded bg-black/20">
                   ESC
@@ -394,9 +493,13 @@ export const HyprPalette: React.FC = () => {
                       key={s.id}
                       onClick={() => {
                         setSelectedIndex(idx);
-                        // Trigger next tick to get correct selected index action
                         setTimeout(() => {
-                          setInputVal(s.name.split(" ")[0] + " ");
+                          const cmdPrefix = s.name.split(" ").slice(0, -1).join(" ");
+                          const suffix = s.name.split(" ").pop();
+                          const isPlaceholder = suffix?.startsWith("[");
+                          
+                          // If placeholder like "/add-todo [text]", set only prefix, else set full command
+                          setInputVal(isPlaceholder ? cmdPrefix + " " : s.name + " ");
                           inputRef.current?.focus();
                         }, 0);
                       }}

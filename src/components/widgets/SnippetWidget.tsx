@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { useHyprStore } from "@/hooks/useHyprStore";
-import { Terminal, Copy, Check, Trash2, Code2 } from "lucide-react";
+import { Code2, Copy, Check, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 export const SnippetWidget: React.FC = () => {
   const { state, addSnippet, deleteSnippet } = useHyprStore();
@@ -11,7 +12,8 @@ export const SnippetWidget: React.FC = () => {
   const [title, setTitle] = useState("");
   const [code, setCode] = useState("");
   const [lang, setLang] = useState("bash");
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCopy = (id: string, text: string) => {
@@ -27,115 +29,117 @@ export const SnippetWidget: React.FC = () => {
     setTitle("");
     setCode("");
     setLang("bash");
-    setShowAddForm(false);
+    setShowForm(false);
   };
 
   return (
-    <div className="flex flex-col h-full font-mono text-xs justify-between gap-2 select-none">
-      {/* Header controls */}
-      <div className="flex justify-between items-center border-b border-card-border/30 pb-1.5 mb-1 text-[10px] text-text-muted">
-        <span className="flex items-center gap-1.5 uppercase font-bold text-accent/90">
-          <Code2 size={10} />
-          WIDGET::CODE_SNIPPETS
-        </span>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="cursor-pointer hover:text-accent transition-colors"
-        >
-          {showAddForm ? "[LIST_VIEW]" : "[+ SNIPPET]"}
-        </button>
-      </div>
+    <div className="select-none">
+      {/* Toggle */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 text-sm text-foreground/50 hover:text-foreground/80 transition-colors cursor-pointer"
+      >
+        <Code2 size={14} />
+        <span>{snippets.length} snippet{snippets.length !== 1 ? "s" : ""}</span>
+      </button>
 
-      {/* Snippet Content Area */}
-      <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-0 select-text">
-        {showAddForm ? (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-2 bg-black/40 border border-card-border/30 rounded select-none">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Title/Alias"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="flex-1 bg-black/60 border border-card-border/50 rounded px-2.5 py-1 text-foreground focus:outline-none focus:border-accent text-[10px]"
-                required
-              />
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value)}
-                className="bg-black/60 border border-card-border/50 rounded px-1.5 py-1 text-foreground focus:outline-none focus:border-accent text-[9px] cursor-pointer"
+      {/* Panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: 8, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute bottom-full left-0 mb-2 w-80 bg-card-bg/90 backdrop-blur-xl border border-card-border rounded-xl p-3 shadow-2xl overflow-hidden"
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-xs font-medium text-foreground/60">Snippets</span>
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="text-[11px] text-foreground/40 hover:text-foreground/70 cursor-pointer transition-colors"
               >
-                <option value="bash">BASH</option>
-                <option value="jsx">JSX</option>
-                <option value="css">CSS</option>
-                <option value="json">JSON</option>
-                <option value="ts">TS</option>
-              </select>
+                {showForm ? "Cancel" : "+ New"}
+              </button>
             </div>
-            <textarea
-              placeholder="Paste code blocks here..."
-              rows={4}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full bg-black/60 border border-card-border/50 rounded px-2.5 py-1.5 text-foreground focus:outline-none focus:border-accent text-[10px] font-mono resize-none"
-              required
-            />
-            <button
-              type="submit"
-              className="w-full py-1 bg-accent/10 border border-accent/40 rounded hover:bg-accent/20 text-accent text-[10px] font-bold cursor-pointer"
-            >
-              SAVE SNIPPET
-            </button>
-          </form>
-        ) : snippets.length > 0 ? (
-          snippets.map((snippet) => (
-            <div
-              key={snippet.id}
-              className="border border-card-border/20 rounded bg-black/40 flex flex-col overflow-hidden"
-            >
-              {/* Snippet Header */}
-              <div className="flex items-center justify-between px-2.5 py-1 bg-black/30 border-b border-card-border/10 text-[9px] text-text-muted">
-                <span className="font-semibold text-foreground/80 truncate uppercase flex items-center gap-1.5">
-                  <Terminal size={9} className="text-accent" />
-                  {snippet.title}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[8px] bg-accent-dim text-accent px-1 rounded uppercase">
-                    {snippet.lang}
-                  </span>
-                  <button
-                    onClick={() => handleCopy(snippet.id, snippet.code)}
-                    className="hover:text-accent transition-colors cursor-pointer pointer-events-auto p-0.5"
-                    title="Copy Code"
-                  >
-                    {copiedId === snippet.id ? (
-                      <Check size={10} className="text-emerald-400" />
-                    ) : (
-                      <Copy size={10} />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => deleteSnippet(snippet.id)}
-                    className="hover:text-rose-400 transition-colors cursor-pointer pointer-events-auto p-0.5"
-                    title="Delete"
-                  >
-                    <Trash2 size={10} />
-                  </button>
-                </div>
-              </div>
 
-              {/* Snippet Preview Code */}
-              <pre className="p-2 overflow-x-auto text-[9px] leading-relaxed text-foreground/75 bg-slate-950/20 max-h-[80px] font-mono whitespace-pre select-all select-none scrollbar-thin">
-                <code>{snippet.code}</code>
-              </pre>
+            {/* Add form */}
+            {showForm && (
+              <form onSubmit={handleSubmit} className="flex flex-col gap-2 mb-3 pb-3 border-b border-white/5">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:border-white/20"
+                    required
+                  />
+                  <select
+                    value={lang}
+                    onChange={(e) => setLang(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs outline-none cursor-pointer"
+                  >
+                    <option value="bash">bash</option>
+                    <option value="jsx">jsx</option>
+                    <option value="css">css</option>
+                    <option value="json">json</option>
+                    <option value="ts">ts</option>
+                  </select>
+                </div>
+                <textarea
+                  placeholder="Code..."
+                  rows={3}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs font-mono outline-none resize-none focus:border-white/20"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="w-full py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  Save
+                </button>
+              </form>
+            )}
+
+            {/* List */}
+            <div className="flex flex-col gap-2 max-h-56 overflow-y-auto">
+              {snippets.length > 0 ? (
+                snippets.map((s) => (
+                  <div key={s.id} className="bg-white/[0.03] border border-white/5 rounded-lg overflow-hidden group">
+                    <div className="flex items-center justify-between px-2.5 py-1.5 text-[11px]">
+                      <span className="text-foreground/60 truncate font-medium">{s.title}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-foreground/20 text-[10px]">{s.lang}</span>
+                        <button
+                          onClick={() => handleCopy(s.id, s.code)}
+                          className="text-foreground/30 hover:text-foreground/60 cursor-pointer transition-colors"
+                        >
+                          {copiedId === s.id ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
+                        </button>
+                        <button
+                          onClick={() => deleteSnippet(s.id)}
+                          className="text-foreground/30 hover:text-red-400 cursor-pointer transition-colors"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                    <pre className="px-2.5 pb-2 text-[10px] text-foreground/40 font-mono whitespace-pre overflow-x-auto max-h-16">
+                      <code>{s.code}</code>
+                    </pre>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[11px] text-foreground/25 text-center py-3">No snippets yet</p>
+              )}
             </div>
-          ))
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-text-muted/50 py-8 gap-2">
-            <Terminal size={20} className="opacity-30" />
-            <span className="text-[10px]">SNIPPETS MODULE EMPTY</span>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 };

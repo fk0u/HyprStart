@@ -38,6 +38,7 @@ export interface HyprState {
   snippets: CodeSnippet[];
   weatherCity: string;
   showCosmosParticles: boolean;
+  use24hFormat: boolean;
 }
 
 export interface HyprContextType {
@@ -54,6 +55,7 @@ export interface HyprContextType {
   deleteSnippet: (id: string) => void;
   setWeatherCity: (city: string) => void;
   toggleCosmosParticles: () => void;
+  setUse24hFormat: (val: boolean) => void;
   importConfig: (config: string) => boolean;
   exportConfig: () => void;
   resetConfig: () => void;
@@ -95,6 +97,7 @@ const INITIAL_STATE: HyprState = {
   snippets: DEFAULT_SNIPPETS,
   weatherCity: "Neo-Tokyo",
   showCosmosParticles: true,
+  use24hFormat: true,
 };
 
 const HyprContext = createContext<HyprContextType | undefined>(undefined);
@@ -121,6 +124,7 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
             snippets: parsed.snippets || INITIAL_STATE.snippets,
             weatherCity: parsed.weatherCity || INITIAL_STATE.weatherCity,
             showCosmosParticles: parsed.showCosmosParticles !== undefined ? parsed.showCosmosParticles : INITIAL_STATE.showCosmosParticles,
+            use24hFormat: parsed.use24hFormat !== undefined ? parsed.use24hFormat : INITIAL_STATE.use24hFormat,
           });
           setIsLoaded(true);
         }, 0);
@@ -242,6 +246,10 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState((prev) => ({ ...prev, showCosmosParticles: !prev.showCosmosParticles }));
   };
 
+  const setUse24hFormat = (val: boolean) => {
+    setState((prev) => ({ ...prev, use24hFormat: val }));
+  };
+
   const importConfig = (configJson: string): boolean => {
     try {
       const parsed = JSON.parse(configJson);
@@ -256,6 +264,7 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
         snippets: Array.isArray(parsed.snippets) ? parsed.snippets : INITIAL_STATE.snippets,
         weatherCity: parsed.weatherCity || INITIAL_STATE.weatherCity,
         showCosmosParticles: parsed.showCosmosParticles !== undefined ? parsed.showCosmosParticles : INITIAL_STATE.showCosmosParticles,
+        use24hFormat: parsed.use24hFormat !== undefined ? parsed.use24hFormat : INITIAL_STATE.use24hFormat,
       });
       return true;
     } catch (e) {
@@ -305,6 +314,7 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteSnippet,
         setWeatherCity,
         toggleCosmosParticles,
+        setUse24hFormat,
         importConfig,
         exportConfig,
         resetConfig,

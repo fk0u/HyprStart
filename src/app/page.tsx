@@ -1,149 +1,133 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { HyprProvider, useHyprStore } from "@/hooks/useHyprStore";
 import { CosmosBg } from "@/components/CosmosBg";
-import { WidgetContainer } from "@/components/WidgetContainer";
 import { HyprPalette } from "@/components/HyprPalette";
 
-// Import all modular widgets
 import { ClockWidget } from "@/components/widgets/ClockWidget";
-import { TodoWidget } from "@/components/widgets/TodoWidget";
 import { BookmarksWidget } from "@/components/widgets/BookmarksWidget";
-import { SnippetWidget } from "@/components/widgets/SnippetWidget";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { TodoWidget } from "@/components/widgets/TodoWidget";
+import { SnippetWidget } from "@/components/widgets/SnippetWidget";
 import { CryptoWidget } from "@/components/widgets/CryptoWidget";
 
-// Import technical icons
-import { Terminal, Shield, Cpu } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 
 const Dashboard: React.FC = () => {
-  const { state, toggleWidget } = useHyprStore();
-  const { widgets, theme } = state;
+  const { state, setTheme } = useHyprStore();
+  const { theme } = state;
+  const [searchVal, setSearchVal] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
 
-  const renderWidgetContent = (id: string) => {
-    switch (id) {
-      case "clock":
-        return <ClockWidget />;
-      case "todo":
-        return <TodoWidget />;
-      case "bookmarks":
-        return <BookmarksWidget />;
-      case "snippets":
-        return <SnippetWidget />;
-      case "weather":
-        return <WeatherWidget />;
-      case "crypto":
-        return <CryptoWidget />;
-      default:
-        return null;
-    }
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchVal.trim()) return;
+    window.open(
+      `https://google.com/search?q=${encodeURIComponent(searchVal.trim())}`,
+      "_blank"
+    );
+    setSearchVal("");
   };
 
-  const getWidgetTitle = (id: string) => {
-    switch (id) {
-      case "clock":
-        return "Digital Clock System";
-      case "todo":
-        return "Checklist Task Manager";
-      case "bookmarks":
-        return "Bookmarks Launcher Linker";
-      case "snippets":
-        return "Dev Snippet Repository";
-      case "weather":
-        return "Atmosphere Climate Telemetry";
-      case "crypto":
-        return "Simulated Asset Sparklines";
-      default:
-        return "Modular Node";
-    }
-  };
+  const themes = [
+    { id: "tokyo-night", label: "Tokyo Night" },
+    { id: "nord", label: "Nord" },
+    { id: "cyber-cyan", label: "Mint" },
+    { id: "gruvbox", label: "Gruvbox" },
+  ];
 
   return (
-    <div className="relative flex flex-col w-screen h-screen overflow-hidden font-mono text-foreground select-none">
-      {/* 1. Starry Canvas Background */}
+    <div className="relative h-screen w-full flex flex-col items-center justify-center select-none">
       <CosmosBg />
-
-      {/* 2. HyprPalette Command Overlay */}
       <HyprPalette />
 
-      {/* 3. Cosmic Technical Background Glyph Title */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
-        <h1 className="text-[10vw] font-black tracking-[0.3em] text-accent opacity-[0.04] cyber-glitch-text font-mono select-none">
-          HYPRSTART
-        </h1>
+      {/* ─── Center content ─── */}
+      <div className="z-10 flex flex-col items-center gap-8 px-4">
+        {/* Clock + Greeting */}
+        <ClockWidget />
+
+        {/* Search bar */}
+        <form
+          onSubmit={handleSearchSubmit}
+          className="relative w-full max-w-md"
+        >
+          <input
+            type="text"
+            value={searchVal}
+            onChange={(e) => setSearchVal(e.target.value)}
+            placeholder="Search the web..."
+            className="w-full bg-white/[0.07] backdrop-blur-sm border border-white/[0.08] rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:bg-white/[0.1] focus:border-white/[0.15] transition-all duration-200 placeholder:text-foreground/25"
+          />
+          <Search
+            size={16}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30"
+          />
+        </form>
+
+        {/* Bookmarks row */}
+        <BookmarksWidget />
       </div>
 
-      {/* 4. Top Technical Status Bar (Waybar style) */}
-      <header className="z-40 w-full bg-black/55 backdrop-blur-md border-b border-card-border/40 px-6 py-1.5 flex justify-between items-center text-[10px] tracking-wide text-text-muted select-none">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 font-bold text-accent">
-            <Terminal size={12} className="animate-pulse" />
-            ⧉ HYPRSTART::ENV_SYS
-          </span>
-          <span className="opacity-40">|</span>
-          
-          {/* Active Toggles */}
-          <div className="flex gap-2">
-            {widgets.map((w) => (
+      {/* ─── Bottom bar ─── */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 px-6 py-4">
+        <div className="flex items-end justify-between max-w-5xl mx-auto">
+          {/* Left: Weather + Todo */}
+          <div className="flex items-center gap-6">
+            <WeatherWidget />
+            <div className="relative">
+              <TodoWidget />
+            </div>
+            <div className="relative">
+              <SnippetWidget />
+            </div>
+          </div>
+
+          {/* Right: Crypto + Settings */}
+          <div className="flex items-center gap-5">
+            <div className="relative">
+              <CryptoWidget />
+            </div>
+
+            {/* Settings gear */}
+            <div className="relative">
               <button
-                key={w.id}
-                onClick={() => toggleWidget(w.id)}
-                className={`px-1.5 py-0.5 rounded-[2px] transition-all hover:bg-white/5 cursor-pointer ${
-                  w.visible
-                    ? "text-accent border border-accent/20 bg-accent-dim"
-                    : "text-text-muted/50 border border-transparent line-through"
-                }`}
+                onClick={() => setShowSettings(!showSettings)}
+                className="text-foreground/30 hover:text-foreground/60 transition-colors cursor-pointer"
               >
-                {w.id.toUpperCase()}
+                <Settings size={16} />
               </button>
-            ))}
+
+              {showSettings && (
+                <div className="absolute bottom-full right-0 mb-2 bg-card-bg/90 backdrop-blur-xl border border-card-border rounded-xl p-3 shadow-2xl w-44">
+                  <p className="text-[11px] text-foreground/40 mb-2">Theme</p>
+                  <div className="flex flex-col gap-1">
+                    {themes.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setTheme(t.id);
+                          setShowSettings(false);
+                        }}
+                        className={`text-left text-xs px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                          theme === t.id
+                            ? "bg-white/10 text-foreground/80"
+                            : "text-foreground/40 hover:text-foreground/70 hover:bg-white/5"
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-foreground/25 mt-3">
+                    Ctrl+K for command palette
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* System telemetry indicators */}
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 select-all">
-            <Shield size={10} className="text-accent" />
-            THEME: <span className="text-foreground font-bold uppercase">{theme}</span>
-          </span>
-          <span className="opacity-40">|</span>
-          <span className="flex items-center gap-1">
-            <Cpu size={10} className="text-accent" />
-            RAM: 3.42GB / 16.00GB
-          </span>
-          <span className="opacity-40">|</span>
-          <span className="text-accent-glow font-bold animate-pulse">
-            PRESS [CTRL+K] FOR COMMAND PROMPT
-          </span>
-        </div>
-      </header>
-
-      {/* 5. Workstation Floating Widget Desktop Area */}
-      <main className="flex-1 relative w-full h-full p-6 overflow-hidden z-10 pointer-events-none">
-        {widgets.map(
-          (w) =>
-            w.visible && (
-              <WidgetContainer
-                key={w.id}
-                id={w.id}
-                title={getWidgetTitle(w.id)}
-                x={w.x}
-                y={w.y}
-                w={w.w}
-                h={w.h}
-              >
-                {renderWidgetContent(w.id)}
-              </WidgetContainer>
-            )
-        )}
-      </main>
-
-      {/* 6. Technical HUD Grid-Border Overlay & Footer */}
-      <footer className="z-40 w-full bg-black/45 backdrop-blur-sm border-t border-card-border/20 px-6 py-1 flex justify-between items-center text-[8px] text-text-muted/60 select-none">
-        <span>CONFIG::INDEXED_DB::LOCAL_STORAGE_OK</span>
-        <span>HYPRSTART v2.1.0 // NO_DATABASE_ACTIVE // POWERED_BY_NEXT</span>
-      </footer>
+      </div>
     </div>
   );
 };

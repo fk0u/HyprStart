@@ -1,26 +1,154 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Default: Tokyo Night style */
+  --background: #0b0f19;
+  --foreground: #c0caf5;
+  --card-bg: rgba(15, 23, 42, 0.45);
+  --card-border: rgba(6, 182, 212, 0.2);
+  --accent: #06b6d4; /* Cyan */
+  --accent-rgb: 6, 182, 212;
+  --accent-glow: rgba(6, 182, 212, 0.4);
+  --accent-dim: rgba(6, 182, 212, 0.08);
+  --text-muted: #565f89;
+  --grid-color: rgba(6, 182, 212, 0.03);
+}
+
+[data-theme="nord"] {
+  --background: #2e3440;
+  --foreground: #d8dee9;
+  --card-bg: rgba(46, 52, 64, 0.5);
+  --card-border: rgba(136, 192, 208, 0.2);
+  --accent: #88c0d0; /* Frost Cyan-Blue */
+  --accent-rgb: 136, 192, 208;
+  --accent-glow: rgba(136, 192, 208, 0.4);
+  --accent-dim: rgba(136, 192, 208, 0.08);
+  --text-muted: #4c566a;
+  --grid-color: rgba(136, 192, 208, 0.03);
+}
+
+[data-theme="cyber-cyan"] {
+  --background: #020202;
+  --foreground: #00ffff;
+  --card-bg: rgba(0, 0, 0, 0.85);
+  --card-border: rgba(0, 255, 255, 0.35);
+  --accent: #00ffff; /* Cyber Cyan */
+  --accent-rgb: 0, 255, 255;
+  --accent-glow: rgba(0, 255, 255, 0.6);
+  --accent-dim: rgba(0, 255, 255, 0.12);
+  --text-muted: #008888;
+  --grid-color: rgba(0, 255, 255, 0.04);
+}
+
+[data-theme="gruvbox"] {
+  --background: #1d2021;
+  --foreground: #ebdbb2;
+  --card-bg: rgba(40, 40, 40, 0.55);
+  --card-border: rgba(250, 189, 47, 0.25);
+  --accent: #fabd2f; /* Gruvbox Yellow/Gold */
+  --accent-rgb: 250, 189, 47;
+  --accent-glow: rgba(250, 189, 47, 0.4);
+  --accent-dim: rgba(250, 189, 47, 0.08);
+  --text-muted: #a89984;
+  --grid-color: rgba(250, 189, 47, 0.03);
+}
+
+[data-theme="tokyo-night"] {
+  --background: #0b0f19;
+  --foreground: #c0caf5;
+  --card-bg: rgba(15, 23, 42, 0.45);
+  --card-border: rgba(6, 182, 212, 0.2);
+  --accent: #06b6d4; /* Cyan */
+  --accent-rgb: 6, 182, 212;
+  --accent-glow: rgba(6, 182, 212, 0.4);
+  --accent-dim: rgba(6, 182, 212, 0.08);
+  --text-muted: #565f89;
+  --grid-color: rgba(6, 182, 212, 0.03);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-accent: var(--accent);
+  --color-text-muted: var(--text-muted);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-accent-glow: var(--accent-glow);
+  --color-accent-dim: var(--accent-dim);
+  
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Custom global styles & scrollbar */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden; /* Startpage workstation should fit in viewport */
+  user-select: none;
+}
+
+/* Monospace scanline grid in background */
+.scanline-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+}
+
+/* Glassmorphism utility card */
+.glass-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+  border-color: rgba(var(--accent-rgb), 0.4);
+  box-shadow: 0 0 20px var(--accent-dim);
+}
+
+/* Technical glow bar */
+.glow-bar-top {
+  position: relative;
+}
+.glow-bar-top::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* Custom Technical Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Cyber text effects */
+.cyber-glitch-text {
+  text-shadow: 0 0 5px var(--accent);
+}
+
+.cyber-terminal {
+  font-family: var(--font-mono);
 }

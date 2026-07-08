@@ -16,6 +16,7 @@ import { CryptoWidget } from "@/components/widgets/CryptoWidget";
 import { AmbientSound } from "@/components/widgets/AmbientSound";
 import { DiscoverWidget } from "@/components/widgets/DiscoverWidget";
 import { SystemTelemetry } from "@/components/widgets/SystemTelemetry";
+import { CinematicIntro } from "@/components/CinematicIntro";
 
 import { Settings, X, Image as ImageIcon, Palette, Eye, EyeOff } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -31,6 +32,25 @@ const Dashboard: React.FC = () => {
   const [focusMode, setFocusMode] = useState(false);
   const [customBgInput, setCustomBgInput] = useState(backgroundUrl);
   const [settingsTab, setSettingsTab] = useState<"theme" | "wallpaper">("theme");
+  const [introComplete, setIntroComplete] = useState(true); // default to true to avoid layout flicker
+  const [showIntro, setShowIntro] = useState(false);
+
+  // Check if intro has played this session
+  useEffect(() => {
+    const hasPlayed = sessionStorage.getItem("hyprstart_intro_played");
+    if (!hasPlayed) {
+      setShowIntro(true);
+      setIntroComplete(false);
+    } else {
+      setIntroComplete(true);
+    }
+  }, []);
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem("hyprstart_intro_played", "true");
+    setIntroComplete(true);
+    setShowIntro(false);
+  };
 
   const interestOptions = [
     { id: "kpop", label: "🎵 K-Pop" },

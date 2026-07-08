@@ -1,34 +1,60 @@
-# 🌀 HyprStart
+<h1 align="center">
+  Hyprstart </h1>
+  <p align="center">
+    HyprStart is an immersive, keyboard-driven, database-free start page designed for power users, ricing enthusiasts, and minimalist desktop fans. It replicates the functionality of a lightweight desktop environment or a tiling window manager inside the web browser.
+</p>
 
-HyprStart is an immersive, keyboard-driven, database-free start page designed for power users, ricing enthusiasts, and minimalist desktop fans. It replicates the functionality of a lightweight desktop environment or a tiling window manager inside the web browser.
+<p align="center">
+  <a href="https://github.com/fk0u/hyprstart/stargazers">
+    <img src="https://img.shields.io/github/stars/fk0u/hyprstart?style=for-the-badge&logo=starship&color=a6e3a1&logoColor=D9E0EE&labelColor=302D41">
+  </a>
+  <a href="https://github.com/fk0u/hyprstart/issues">
+    <img src="https://img.shields.io/github/issues/fk0u/hyprstart?style=for-the-badge&logo=gitbook&color=fab387&logoColor=D9E0EE&labelColor=302D41">
+  </a>
+  <a href="https://github.com/fk0u/hyprstart/contributors">
+    <img src="https://img.shields.io/github/contributors/fk0u/hyprstart?style=for-the-badge&logo=github&color=f38ba8&logoColor=D9E0EE&labelColor=302D41">
+  </a>
+</p>
+
+<p align="center">
+  <img src="public\Macbook-Air-localhost.webp"/>
+</p>
+
+## 📝 Overview
 
 ---
 
 ## ✨ Features
 
 ### 1. Keyless Real-time API Weather & GPS Locating
+
 - **No API Keys Required**: Seamlessly query coordinates using the free, high-performance **Open-Meteo API**.
 - **GPS Integration**: Retrieve your physical location with HTML5 Geolocation API, with reverse geocoding to city names via **OpenStreetMap Nominatim**.
 - **Live Backdrop Sync**: The background canvas reacts live to current weather conditions (falling rain, solar rays, drifting mist, moving clouds, or clear starry skies).
 
 ### 2. Procedural Ambient Soundscapes (Web Audio API)
+
 - **Mathematical Sound Synthesis**: Generates sound mathematically using Brownian and Pink noise buffers. Works completely offline.
 - **Atmospheric Options**: Select between procedurally synthesized **Rain patters**, **Wind gusts**, or **Ocean waves**.
 - **Visual Waveform**: Built-in volume slider and bouncing CSS equalizer bar visualizer.
 
 ### 3. Autocomplete Suggest Search Bar
+
 - **Debounced Google Suggest API**: As you type, the search bar queries a server-side proxy route to provide search suggestions.
 - **Keyboard Navigation**: Press `Arrow Down` / `Arrow Up` to navigate suggestions, `Tab` to complete the query, `Enter` to search, and `Esc` to close.
 - **Copy Query Shortcut**: Fill suggestion text into the input field instantly using the arrow-up-left icon.
 
 ### 4. Fuzzy Command Palette (Levenshtein Distance)
+
 - **Fuzzy Filtering**: The command palette (`Ctrl + K` or `Alt + D`) uses a space-optimized Levenshtein distance algorithm to find commands even with typos (e.g. `/them gruvbox` matches `/theme`).
 
 ### 5. Personalized Discover Feed
+
 - **Interest-Based Curation**: Toggle topics you love (Anime, K-Pop, Japanese culture, Tech, Indonesian Pop, Javanese Hipdut, Global Pop, Fashion, Nature) and view curated cards.
 - **Searchable List**: Quickly filter active topics using the in-widget search bar.
 
 ### 6. System Telemetry & Calendar Popups
+
 - **Battery Status**: Exposes live laptop battery charging status and level via HTML5 Battery Status API.
 - **RAM Heap Tracker**: Tracks active JavaScript heap size to estimate system memory load.
 - **Clickable Calendar**: Click the date in the center Clock widget to reveal a custom pixel-perfect calendar grid.
@@ -38,6 +64,7 @@ HyprStart is an immersive, keyboard-driven, database-free start page designed fo
 ## ⌨️ Vim-like Keyboard Shortcuts
 
 Press **`?`** on your dashboard (when not typing in an input field) to reveal the shortcuts panel:
+
 - `g` : Focus search input
 - `Alt + F` : Toggle Focus Mode (minimalist Clock-only view)
 - `Ctrl + K` / `Alt + D` : Open/Close Command Palette
@@ -59,11 +86,13 @@ Press **`?`** on your dashboard (when not typing in an input field) to reveal th
 ## 🚀 Running Locally
 
 1. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 2. **Run dev server**:
+
    ```bash
    npm run dev
    ```

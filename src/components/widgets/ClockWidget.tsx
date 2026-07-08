@@ -26,6 +26,7 @@ export const ClockWidget: React.FC = () => {
   const [nameInput, setNameInput] = useState(userName);
   const [editingFocus, setEditingFocus] = useState(false);
   const [focusInput, setFocusInput] = useState(focusGoal);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
     setTimeout(() => setTime(new Date()), 0);
@@ -78,8 +79,60 @@ export const ClockWidget: React.FC = () => {
     setEditingFocus(false);
   };
 
+  const renderCalendarGrid = () => {
+    const year = time.getFullYear();
+    const month = time.getMonth(); // 0-indexed
+    const todayDate = time.getDate();
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    const monthLabel = time.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    
+    const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    const cells = [];
+
+    // Fill empty cells before the first day of the month
+    for (let i = 0; i < firstDayIndex; i++) {
+      cells.push(<div key={`empty-${i}`} className="w-8 h-8" />);
+    }
+
+    // Fill cells with actual days
+    for (let day = 1; day <= totalDays; day++) {
+      const isToday = day === todayDate;
+      cells.push(
+        <div
+          key={`day-${day}`}
+          className={`w-8 h-8 flex items-center justify-center text-xs rounded-lg ${
+            isToday
+              ? "bg-white/10 text-foreground font-bold border border-white/10"
+              : "text-foreground/60"
+          }`}
+        >
+          {day}
+        </div>
+      );
+    }
+
+    return (
+      <div className="absolute top-full mt-2 z-40 bg-card-bg/95 backdrop-blur-xl border border-card-border p-4 rounded-2xl shadow-2xl w-64 select-none">
+        <div className="text-xs font-semibold text-foreground/80 mb-3 text-center uppercase tracking-wider">
+          {monthLabel}
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center font-mono">
+          {dayNames.map((name) => (
+            <div key={name} className="w-8 text-[10px] text-foreground/25 font-bold">
+              {name}
+            </div>
+          ))}
+          {cells}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="flex flex-col items-center select-none">
+    <div className="flex flex-col items-center select-none relative">
       {/* Big time */}
       <div
         className="flex items-baseline cursor-pointer"
@@ -121,8 +174,17 @@ export const ClockWidget: React.FC = () => {
         </button>
       )}
 
-      {/* Date */}
-      <p className="text-sm text-foreground/35 mt-1">{dateStr}</p>
+      {/* Date — click to toggle calendar */}
+      <button
+        onClick={() => setShowCalendar(!showCalendar)}
+        className="text-sm text-foreground/35 mt-1 cursor-pointer hover:text-foreground/60 transition-colors"
+        title="Toggle Calendar"
+      >
+        {dateStr}
+      </button>
+
+      {/* Calendar dropdown */}
+      {showCalendar && renderCalendarGrid()}
 
       {/* Daily focus goal */}
       <div className="mt-6 w-full max-w-sm">

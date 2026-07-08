@@ -15,6 +15,7 @@ import { SnippetWidget } from "@/components/widgets/SnippetWidget";
 import { CryptoWidget } from "@/components/widgets/CryptoWidget";
 import { AmbientSound } from "@/components/widgets/AmbientSound";
 import { DiscoverWidget } from "@/components/widgets/DiscoverWidget";
+import { SystemTelemetry } from "@/components/widgets/SystemTelemetry";
 
 import { Settings, X, Image as ImageIcon, Palette, Eye, EyeOff } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -50,6 +51,52 @@ const Dashboard: React.FC = () => {
       setInterests([...interests, id]);
     }
   };
+
+  interface SystemNotification {
+    id: string;
+    message: string;
+    type: "info" | "success" | "warn";
+  }
+
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+
+  const addNotification = (message: string, type: "info" | "success" | "warn" = "info") => {
+    const id = Math.random().toString();
+    setNotifications((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 4000);
+  };
+
+  // Simulated notifications triggers
+  useEffect(() => {
+    // Welcome notification
+    const t1 = setTimeout(() => {
+      addNotification("HyprStart OS initialized successfully.", "success");
+    }, 1200);
+
+    const t2 = setTimeout(() => {
+      addNotification("Welcome back! Press '?' for the hotkeys cheatsheet.", "info");
+    }, 2800);
+
+    // Periodic Reminders (Hydration, focus)
+    const interval = setInterval(() => {
+      const reminders = [
+        "Focus reminder: Sit straight and stretch your back!",
+        "Health tip: Drink a glass of water to stay hydrated.",
+        "System telemetry: Ambient soundscapes procedurally active.",
+        "Ricing tip: Customize your background image in Settings → Wallpaper & Feed.",
+      ];
+      const randomMsg = reminders[Math.floor(Math.random() * reminders.length)];
+      addNotification(randomMsg, "info");
+    }, 120000); // 2 minutes
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Keyboard navigation shortcuts
   useEffect(() => {
@@ -132,6 +179,58 @@ const Dashboard: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* ─── Top bar ─── */}
+      <AnimatePresence>
+        {!focusMode && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-0 left-0 right-0 z-20 px-6 py-3 bg-white/[0.01] border-b border-white/[0.03] backdrop-blur-[2px]"
+          >
+            <div className="flex items-center justify-between max-w-5xl mx-auto">
+              {/* Left side: Brand + Weather + Telemetry */}
+              <div className="flex items-center gap-5">
+                <span className="text-[11px] font-semibold tracking-wider text-foreground/50 uppercase select-none font-mono">
+                  🌀 HyprStart
+                </span>
+                <span className="h-3 w-[1px] bg-white/10" />
+                <WeatherWidget />
+                <span className="h-3 w-[1px] bg-white/10" />
+                <SystemTelemetry />
+              </div>
+
+              {/* Right side: Crypto + Controls */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <CryptoWidget />
+                </div>
+                <span className="h-3 w-[1px] bg-white/10" />
+
+                {/* Focus mode toggle */}
+                <button
+                  onClick={() => setFocusMode(true)}
+                  className="text-foreground/25 hover:text-foreground/50 transition-colors cursor-pointer"
+                  title="Focus mode (Alt+F)"
+                >
+                  <Eye size={14} />
+                </button>
+
+                {/* Settings */}
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="text-foreground/25 hover:text-foreground/50 transition-colors cursor-pointer"
+                  title="Settings"
+                >
+                  <Settings size={14} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ─── Bottom bar ─── */}
       <AnimatePresence>
         {!focusMode && (
@@ -142,46 +241,18 @@ const Dashboard: React.FC = () => {
             transition={{ duration: 0.3 }}
             className="fixed bottom-0 left-0 right-0 z-20 px-6 py-4"
           >
-            <div className="flex items-end justify-between max-w-5xl mx-auto">
-              {/* Left side */}
-              <div className="flex items-center gap-6">
-                <WeatherWidget />
-                <div className="relative">
-                  <TodoWidget />
-                </div>
-                <div className="relative">
-                  <SnippetWidget />
-                </div>
-                <div className="relative">
-                  <AmbientSound />
-                </div>
-                <div className="relative">
-                  <DiscoverWidget />
-                </div>
+            <div className="flex items-center justify-center max-w-5xl mx-auto gap-4">
+              <div className="relative">
+                <TodoWidget />
               </div>
-
-              {/* Right side */}
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <CryptoWidget />
-                </div>
-
-                {/* Focus mode toggle */}
-                <button
-                  onClick={() => setFocusMode(true)}
-                  className="text-foreground/25 hover:text-foreground/50 transition-colors cursor-pointer"
-                  title="Focus mode (Alt+F)"
-                >
-                  <Eye size={15} />
-                </button>
-
-                {/* Settings */}
-                <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="text-foreground/25 hover:text-foreground/50 transition-colors cursor-pointer"
-                >
-                  <Settings size={15} />
-                </button>
+              <div className="relative">
+                <SnippetWidget />
+              </div>
+              <div className="relative">
+                <AmbientSound />
+              </div>
+              <div className="relative">
+                <DiscoverWidget />
               </div>
             </div>
           </motion.div>
@@ -468,6 +539,38 @@ const Dashboard: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ─── Toast Notifications ─── */}
+      <div className="fixed top-6 right-6 z-50 flex flex-col gap-2.5 max-w-sm pointer-events-none">
+        <AnimatePresence>
+          {notifications.map((n) => (
+            <motion.div
+              key={n.id}
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              transition={{ duration: 0.25 }}
+              className={`p-4 rounded-xl border backdrop-blur-xl shadow-2xl pointer-events-auto flex items-start gap-3 w-72 ${
+                n.type === "success"
+                  ? "bg-green-950/20 border-green-500/15 text-green-400"
+                  : n.type === "warn"
+                  ? "bg-yellow-950/20 border-yellow-500/15 text-yellow-400"
+                  : "bg-white/[0.04] border-white/5 text-foreground/80"
+              }`}
+            >
+              <div className="flex-1 text-xs leading-relaxed font-medium">
+                {n.message}
+              </div>
+              <button
+                onClick={() => setNotifications((prev) => prev.filter((x) => x.id !== n.id))}
+                className="text-foreground/30 hover:text-foreground/60 cursor-pointer"
+              >
+                <X size={12} />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

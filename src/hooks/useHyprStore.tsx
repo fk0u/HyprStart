@@ -88,11 +88,12 @@ const DEFAULT_WIDGETS: WidgetState[] = [
 ];
 
 const DEFAULT_BOOKMARKS: Bookmark[] = [
-  { id: "1", title: "GitHub", url: "https://github.com" },
-  { id: "2", title: "Reddit", url: "https://reddit.com" },
-  { id: "3", title: "YouTube", url: "https://youtube.com" },
-  { id: "4", title: "Twitter", url: "https://twitter.com" },
-  { id: "5", title: "Google", url: "https://google.com" },
+  { id: "1", title: "YouTube", url: "https://youtube.com" },
+  { id: "2", title: "Netflix", url: "https://netflix.com" },
+  { id: "3", title: "Instagram", url: "https://instagram.com" },
+  { id: "4", title: "Reddit", url: "https://reddit.com" },
+  { id: "5", title: "TikTok", url: "https://tiktok.com" },
+  { id: "6", title: "Spotify", url: "https://spotify.com" },
 ];
 
 const DEFAULT_TODOS: TodoItem[] = [

@@ -20,10 +20,6 @@
   <img src="public\Macbook-Air-localhost.webp"/>
 </p>
 
-## 📝 Overview
-
----
-
 ## ✨ Features
 
 ### 1. Keyless Real-time API Weather & GPS Locating
@@ -86,6 +82,7 @@ Press **`?`** on your dashboard (when not typing in an input field) to reveal th
 ## 🚀 Running & Building as Browser Extension
 
 ### Running Locally (Development)
+
 1. **Install dependencies**:
    ```bash
    npm install
@@ -94,22 +91,41 @@ Press **`?`** on your dashboard (when not typing in an input field) to reveal th
    ```bash
    npm run dev
    ```
+   _Secara default, dev server akan berjalan di port `8174` (`http://localhost:8174`)._
 
-### How to Build & Install Browser Extension (Chrome/Edge/Firefox)
+---
+
+## 🖥️ Windows Startup Background Service (Auto-Start)
+
+Agar dev server HyprStart otomatis menyala di latar belakang pada port `8174` setiap kali komputer dinyalakan (booting), gunakan script launcher bawaan:
+
+1. **Pasang Startup Service**:
+   - Double-click file **`install_startup.bat`** di folder root project.
+   - Script akan otomatis menyusun file launcher VBS tersembunyi ke folder Windows Startup.
+   - Server akan berjalan secara silent di latar belakang (tanpa memunculkan jendela Command Prompt hitam yang mengganggu desktop).
+
+2. **Copot Startup Service**:
+   - Jika ingin mematikan autostart, cukup double-click file **`uninstall_startup.bat`**. Ini akan menghapus script startup dan menghentikan proses server port 8174 secara bersih.
+
+---
+
+## 📦 How to Build & Install Browser Extension (Chrome/Edge/Firefox)
+
 1. **Build & Auto-Package to ZIP**:
+
    ```bash
    npm run build:extension
    ```
+
    Command ini akan meng-compile Next.js sebagai static export ke folder `out/` lalu otomatis membungkusnya menjadi file **`hyprstart-extension.zip`** di root folder.
 
 2. **Load Unpacked (Recommended for development)**:
    - Buka browser (Chrome/Edge/Brave).
-   - Masuk ke menu Extensions (`chrome://extensions/` atau `edge://extensions/`).
+   - Masuk ke menu Extensions (`chrome://extensions/`).
    - Aktifkan **Developer mode** di pojok kanan atas.
    - Klik **Load unpacked** dan arahkan ke folder **`out/`** hasil build di dalam directory project.
-   - Selesai! Halaman Tab Baru (New Tab) lo sekarang digantikan secara otomatis oleh HyprStart.
+   - Selesai! Halaman Tab Baru (New Tab) lo sekarang digantikan secara otomatis oleh HyprStart (mengarahkan otomatis ke port `8174` jika dev server aktif, atau memuat local file jika offline).
 
 3. **Install from ZIP Package**:
    - Ekstrak file `hyprstart-extension.zip` ke sebuah folder.
    - Masuk ke menu Extensions, klik **Load unpacked** dan arahkan ke folder ekstrak tersebut.
-   - Lo juga bisa membagikan file `hyprstart-extension.zip` ke temen-temen lo untuk dipasang langsung!

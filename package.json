@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "zip": "powershell Compress-Archive -Path out\\* -DestinationPath hyprstart-extension.zip -Force",
+    "build:extension": "npm run build && npm run zip"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",

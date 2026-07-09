@@ -32,22 +32,10 @@ const Dashboard: React.FC = () => {
   const [focusMode, setFocusMode] = useState(false);
   const [customBgInput, setCustomBgInput] = useState(backgroundUrl);
   const [settingsTab, setSettingsTab] = useState<"theme" | "wallpaper">("theme");
-  const [introComplete, setIntroComplete] = useState(true); // default to true to avoid layout flicker
-  const [showIntro, setShowIntro] = useState(false);
-
-  // Check if intro has played this session
-  useEffect(() => {
-    const hasPlayed = sessionStorage.getItem("hyprstart_intro_played");
-    if (!hasPlayed) {
-      setShowIntro(true);
-      setIntroComplete(false);
-    } else {
-      setIntroComplete(true);
-    }
-  }, []);
+  const [introComplete, setIntroComplete] = useState<boolean>(false);
+  const [showIntro, setShowIntro] = useState<boolean>(true);
 
   const handleIntroComplete = () => {
-    sessionStorage.setItem("hyprstart_intro_played", "true");
     setIntroComplete(true);
     setShowIntro(false);
   };
@@ -162,10 +150,16 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="relative h-screen w-full flex flex-col items-center justify-center select-none overflow-hidden">
-      <CosmosBg />
-      <HyprPalette />
+      <AnimatePresence>
+        {showIntro && <CinematicIntro onComplete={handleIntroComplete} />}
+      </AnimatePresence>
 
-      {/* ─── Center content ─── */}
+      {introComplete && (
+        <>
+          <CosmosBg />
+          <HyprPalette />
+
+          {/* ─── Center content ─── */}
       <AnimatePresence mode="wait">
         {!focusMode ? (
           <motion.div
@@ -591,6 +585,8 @@ const Dashboard: React.FC = () => {
           ))}
         </AnimatePresence>
       </div>
+      </>
+      )}
     </div>
   );
 };

@@ -83,21 +83,33 @@ Press **`?`** on your dashboard (when not typing in an input field) to reveal th
 
 ---
 
-## 🚀 Running Locally
+## 🚀 Running & Building as Browser Extension
 
+### Running Locally (Development)
 1. **Install dependencies**:
-
    ```bash
    npm install
    ```
-
 2. **Run dev server**:
-
    ```bash
    npm run dev
    ```
 
-3. **Build production bundle**:
+### How to Build & Install Browser Extension (Chrome/Edge/Firefox)
+1. **Build & Auto-Package to ZIP**:
    ```bash
-   npm run build
+   npm run build:extension
    ```
+   Command ini akan meng-compile Next.js sebagai static export ke folder `out/` lalu otomatis membungkusnya menjadi file **`hyprstart-extension.zip`** di root folder.
+
+2. **Load Unpacked (Recommended for development)**:
+   - Buka browser (Chrome/Edge/Brave).
+   - Masuk ke menu Extensions (`chrome://extensions/` atau `edge://extensions/`).
+   - Aktifkan **Developer mode** di pojok kanan atas.
+   - Klik **Load unpacked** dan arahkan ke folder **`out/`** hasil build di dalam directory project.
+   - Selesai! Halaman Tab Baru (New Tab) lo sekarang digantikan secara otomatis oleh HyprStart.
+
+3. **Install from ZIP Package**:
+   - Ekstrak file `hyprstart-extension.zip` ke sebuah folder.
+   - Masuk ke menu Extensions, klik **Load unpacked** dan arahkan ke folder ekstrak tersebut.
+   - Lo juga bisa membagikan file `hyprstart-extension.zip` ke temen-temen lo untuk dipasang langsung!

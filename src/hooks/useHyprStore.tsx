@@ -57,6 +57,7 @@ export interface HyprContextType {
   toggleWidget: (id: string) => void;
   updateWidgetPosition: (id: string, x: number, y: number, w?: number, h?: number) => void;
   addBookmark: (title: string, url: string) => void;
+  editBookmark: (id: string, title: string, url: string) => void;
   deleteBookmark: (id: string) => void;
   addTodo: (text: string) => void;
   toggleTodo: (id: string) => void;
@@ -195,6 +196,14 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState((p) => ({ ...p, bookmarks: [...p.bookmarks, { id: Date.now().toString(), title, url: cleanUrl }] }));
   };
   const deleteBookmark = (id: string) => setState((p) => ({ ...p, bookmarks: p.bookmarks.filter((b) => b.id !== id) }));
+  const editBookmark = (id: string, title: string, url: string) => {
+    let cleanUrl = url;
+    if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) cleanUrl = `https://${cleanUrl}`;
+    setState((p) => ({
+      ...p,
+      bookmarks: p.bookmarks.map((b) => (b.id === id ? { ...b, title, url: cleanUrl } : b)),
+    }));
+  };
   const addTodo = (text: string) =>
     setState((p) => ({ ...p, todoList: [...p.todoList, { id: Date.now().toString(), text, completed: false }] }));
   const toggleTodo = (id: string) =>
@@ -317,7 +326,7 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <HyprContext.Provider
       value={{
         state, setTheme, toggleWidget, updateWidgetPosition,
-        addBookmark, deleteBookmark, addTodo, toggleTodo, deleteTodo,
+        addBookmark, editBookmark, deleteBookmark, addTodo, toggleTodo, deleteTodo,
         addSnippet, deleteSnippet, setWeatherCity, fetchWeather, toggleCosmosParticles,
         setUse24hFormat, importConfig, exportConfig, resetConfig,
         setUserName, setFocusGoal, setBackgroundUrl, setBackgroundIndex, setInterests,

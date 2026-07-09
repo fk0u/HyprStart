@@ -15,7 +15,7 @@ export const SearchBar: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch suggestions from our Next.js API proxy
+  // Fetch suggestions via JSONP client-side to support browser extension static export
   const fetchSuggestions = useCallback(async (q: string) => {
     if (q.trim().length < 2) {
       setSuggestions([]);
@@ -25,10 +25,34 @@ export const SearchBar: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/suggest?q=${encodeURIComponent(q)}`);
-      const data: string[] = await res.json();
-      setSuggestions(data);
-      setShowSuggestions(data.length > 0);
+      const suggestionsList = await new Promise<string[]>((resolve) => {
+        const callbackName = `jsonp_callback_${Math.round(Math.random() * 1000000)}`;
+        const win = window as unknown as Record<string, ((data: [string, string[]]) => void) | undefined>;
+        win[callbackName] = (data: [string, string[]]) => {
+          delete win[callbackName];
+          const script = document.getElementById(callbackName);
+          if (script) document.body.removeChild(script);
+          try {
+            resolve(data[1] || []);
+          } catch {
+            resolve([]);
+          }
+        };
+
+        const script = document.createElement("script");
+        script.id = callbackName;
+        script.src = `https://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(q)}&jsonp=${callbackName}`;
+        script.onerror = () => {
+          delete win[callbackName];
+          const scr = document.getElementById(callbackName);
+          if (scr) document.body.removeChild(scr);
+          resolve([]);
+        };
+        document.body.appendChild(script);
+      });
+
+      setSuggestions(suggestionsList);
+      setShowSuggestions(suggestionsList.length > 0);
       setSelectedIdx(-1);
     } catch {
       setSuggestions([]);

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>New Tab</title>
+  <style>
+    body {
+      background-color: #07080a;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #ffffff;
+    }
+    .loader {
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      opacity: 0.4;
+      font-family: monospace;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div id="status" class="loader">connecting to local workstation (8174)...</div>
+  <script>
+    const LOCAL_DEV_URL = "http://localhost:8174";
+    const LOCAL_FALLBACK = "index.html";
+
+    // Test if local dev server on port 8174 is running
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 600);
+
+    fetch(LOCAL_DEV_URL, { method: "HEAD", mode: "no-cors", signal: controller.signal })
+      .then(() => {
+        clearTimeout(timeoutId);
+        window.location.replace(LOCAL_DEV_URL);
+      })
+      .catch(() => {
+        clearTimeout(timeoutId);
+        // Fallback to local extension static compilation
+        window.location.replace(LOCAL_FALLBACK);
+      });
+  </script>
+</body>
+</html>

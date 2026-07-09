@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>HyprStart Extension</title>
+  <style>
+    body {
+      width: 250px;
+      margin: 0;
+      padding: 14px;
+      background-color: #07080a;
+      color: #ffffff;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+    .logo {
+      font-size: 28px;
+      margin-bottom: 10px;
+      animation: spin 8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    .title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .desc {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.35);
+      margin-bottom: 16px;
+      font-family: monospace;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      margin-bottom: 8px;
+      font-family: monospace;
+      text-align: left;
+    }
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+    .footer {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.2);
+      margin-top: 12px;
+      text-align: center;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🌀</div>
+    <div class="title">HyprStart</div>
+    <div class="desc">Workstation Portal</div>
+    
+    <button id="open-dev" class="btn">🚀 PORT TARGET : 8174</button>
+    <button id="open-local" class="btn">📂 LOCAL DASHBOARD</button>
+    
+    <div class="footer">HYPRSTART COMPANION V3.4.0</div>
+  </div>
+  <script>
+    document.getElementById("open-dev").onclick = () => {
+      chrome.tabs.create({ url: "http://localhost:8174" });
+      window.close();
+    };
+    document.getElementById("open-local").onclick = () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL("index.html") });
+      window.close();
+    };
+  </script>
+</body>
+</html>

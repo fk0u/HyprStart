@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "HyprStart - Minimalist New Tab Dashboard",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "A premium, keyboard-driven new tab page dashboard with offline ambient sound synthesizers, system telemetry, and personalized feeds.",
   "chrome_url_overrides": {
-    "newtab": "index.html"
+    "newtab": "newtab.html"
   },
   "permissions": [],
   "icons": {
@@ -18,7 +18,7 @@
       "48": "icon.png",
       "128": "icon.png"
     },
-    "default_title": "HyprStart",
-    "default_popup": "index.html"
+    "default_title": "HyprStart Console",
+    "default_popup": "popup.html"
   }
 }

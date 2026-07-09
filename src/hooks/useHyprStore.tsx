@@ -43,6 +43,7 @@ export interface HyprState {
   weatherWind: number | null;
   showCosmosParticles: boolean;
   use24hFormat: boolean;
+  weatherLastFetched: number | null;
   // Personalization
   userName: string;
   focusGoal: string;
@@ -65,7 +66,7 @@ export interface HyprContextType {
   addSnippet: (title: string, code: string, lang: string) => void;
   deleteSnippet: (id: string) => void;
   setWeatherCity: (city: string) => void;
-  fetchWeather: (cityOrCoords: string | { lat: number; lon: number }) => Promise<void>;
+  fetchWeather: (cityOrCoords: string | { lat: number; lon: number }, bypassCache?: boolean) => Promise<void>;
   toggleCosmosParticles: () => void;
   setUse24hFormat: (val: boolean) => void;
   importConfig: (config: string) => boolean;
@@ -118,6 +119,7 @@ const INITIAL_STATE: HyprState = {
   weatherWind: null,
   showCosmosParticles: true,
   use24hFormat: false,
+  weatherLastFetched: null,
   userName: "",
   focusGoal: "",
   backgroundUrl: "",
@@ -142,6 +144,7 @@ const mergeState = (parsed: Record<string, unknown>): HyprState => ({
   weatherWind: typeof parsed.weatherWind === "number" ? parsed.weatherWind : INITIAL_STATE.weatherWind,
   showCosmosParticles: parsed.showCosmosParticles !== undefined ? (parsed.showCosmosParticles as boolean) : INITIAL_STATE.showCosmosParticles,
   use24hFormat: parsed.use24hFormat !== undefined ? (parsed.use24hFormat as boolean) : INITIAL_STATE.use24hFormat,
+  weatherLastFetched: typeof parsed.weatherLastFetched === "number" ? parsed.weatherLastFetched : INITIAL_STATE.weatherLastFetched,
   userName: (parsed.userName as string) ?? INITIAL_STATE.userName,
   focusGoal: (parsed.focusGoal as string) ?? INITIAL_STATE.focusGoal,
   backgroundUrl: (parsed.backgroundUrl as string) ?? INITIAL_STATE.backgroundUrl,
@@ -232,7 +235,15 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return "Clear";
   };
 
-  const fetchWeather = async (cityOrCoords: string | { lat: number; lon: number }) => {
+  const fetchWeather = async (cityOrCoords: string | { lat: number; lon: number }, bypassCache = false) => {
+    // 15-minute caching logic to avoid hitting rate limits
+    if (!bypassCache && state.weatherLastFetched && state.weatherCity && state.weatherTemp !== null) {
+      const diff = Date.now() - state.weatherLastFetched;
+      if (diff < 15 * 60 * 1000) {
+        return;
+      }
+    }
+
     let lat: number;
     let lon: number;
     let cityName = typeof cityOrCoords === "string" ? cityOrCoords : "";
@@ -286,6 +297,7 @@ export const HyprProvider: React.FC<{ children: React.ReactNode }> = ({ children
         weatherCondition: mapWmoCodeToCondition(current.weather_code),
         weatherHumidity: Math.round(current.relative_humidity_2m),
         weatherWind: Math.round(current.wind_speed_10m),
+        weatherLastFetched: Date.now(),
       }));
 
     } catch (err) {

@@ -38,7 +38,7 @@ export const WeatherWidget: React.FC = () => {
     e.preventDefault();
     if (!cityInput.trim()) return;
     setLoading(true);
-    fetchWeather(cityInput.trim()).finally(() => {
+    fetchWeather(cityInput.trim(), true).finally(() => {
       setLoading(false);
       setIsEditing(false);
     });
@@ -55,7 +55,7 @@ export const WeatherWidget: React.FC = () => {
         fetchWeather({
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
-        }).then(() => {
+        }, true).then(() => {
           setLoading(false);
         });
       },
@@ -68,7 +68,7 @@ export const WeatherWidget: React.FC = () => {
 
   const triggerRefresh = () => {
     setLoading(true);
-    fetchWeather(weatherCity).finally(() => setLoading(false));
+    fetchWeather(weatherCity, true).finally(() => setLoading(false));
   };
 
   const toggleEditing = () => {

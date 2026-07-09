@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useHyprStore } from "@/hooks/useHyprStore";
 import { ExternalLink, Plus, Edit2, Trash2, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { BookmarkPreview } from "./BookmarkPreview";
 
 export const BookmarksWidget: React.FC = () => {
   const { state, addBookmark, editBookmark, deleteBookmark } = useHyprStore();
@@ -13,6 +14,7 @@ export const BookmarksWidget: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
+  const [hoveredBookmarkId, setHoveredBookmarkId] = useState<string | null>(null);
 
   const handleOpenAdd = () => {
     setTitle("");
@@ -68,12 +70,28 @@ export const BookmarksWidget: React.FC = () => {
           <div
             key={b.id}
             className="group relative flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-white/5 transition-all duration-200"
+            onMouseEnter={() => setHoveredBookmarkId(b.id)}
+            onMouseLeave={() => setHoveredBookmarkId(null)}
           >
+            {/* Hover Rich Preview */}
+            <AnimatePresence>
+              {hoveredBookmarkId === b.id && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full mb-3.5 left-1/2 -translate-x-1/2 z-40"
+                >
+                  <BookmarkPreview url={b.url} title={b.title} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <a
               href={b.url.startsWith("http") ? b.url : `https://${b.url}`}
               target="_blank"
               rel="noopener noreferrer"
-              title={b.title}
               className="flex flex-col items-center gap-1.5"
             >
               {favicon ? (

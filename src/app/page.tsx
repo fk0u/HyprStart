@@ -17,8 +17,9 @@ import { AmbientSound } from "@/components/widgets/AmbientSound";
 import { DiscoverWidget } from "@/components/widgets/DiscoverWidget";
 import { SystemTelemetry } from "@/components/widgets/SystemTelemetry";
 import { CinematicIntro } from "@/components/CinematicIntro";
+import { MediaDrawer } from "@/components/widgets/MediaDrawer";
 
-import { Settings, X, Image as ImageIcon, Palette, Eye, EyeOff } from "lucide-react";
+import { Settings, X, Image as ImageIcon, Palette, Eye, EyeOff, Music } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const Dashboard: React.FC = () => {
@@ -29,6 +30,7 @@ const Dashboard: React.FC = () => {
   const { theme, showCosmosParticles, backgroundIndex, backgroundUrl, interests } = state;
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showMedia, setShowMedia] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [customBgInput, setCustomBgInput] = useState(backgroundUrl);
   const [settingsTab, setSettingsTab] = useState<"theme" | "wallpaper">("theme");
@@ -230,6 +232,17 @@ const Dashboard: React.FC = () => {
                   title="Focus mode (Alt+F)"
                 >
                   <Eye size={14} />
+                </button>
+
+                {/* Media Center */}
+                <button
+                  onClick={() => setShowMedia(!showMedia)}
+                  className={`transition-colors cursor-pointer ${
+                    showMedia ? "text-sky-400 hover:text-sky-300 animate-pulse" : "text-foreground/25 hover:text-foreground/50"
+                  }`}
+                  title="Media Center"
+                >
+                  <Music size={14} />
                 </button>
 
                 {/* Settings */}
@@ -674,6 +687,9 @@ const Dashboard: React.FC = () => {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* ─── Global Media Center Drawer ─── */}
+      <MediaDrawer isOpen={showMedia} onClose={() => setShowMedia(false)} />
       </>
       )}
     </div>

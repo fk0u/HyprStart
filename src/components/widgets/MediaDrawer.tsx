@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Play, Pause, SkipForward, SkipBack, Volume2, X, Music, Disc } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Volume2, X, Music, Disc, Tv } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface Track {
@@ -70,6 +70,13 @@ const PLAYLIST: Track[] = [
   },
 ];
 
+interface ActiveTabMedia {
+  id: number;
+  title: string;
+  artist: string;
+  source: string;
+}
+
 interface MediaDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -83,20 +90,131 @@ export const MediaDrawer: React.FC<MediaDrawerProps> = ({ isOpen, onClose }) => 
   const [volume, setVolume] = useState(0.7);
   const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
 
+  // Chrome tab media detection state
+  const [activeTabMedia, setActiveTabMedia] = useState<ActiveTabMedia | null>(null);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
 
   const track = PLAYLIST[currentTrackIndex];
 
+  // 1. Chrome Tab Media Scanner (audible tabs detection)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const checkActiveTabs = () => {
+      // Check if chrome extension tabs API is available
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const chrome = (window as any).chrome;
+      if (chrome && chrome.tabs && chrome.tabs.query) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        chrome.tabs.query({ audible: true }, (tabs: any[]) => {
+          if (tabs && tabs.length > 0) {
+            const activeTab = tabs[0];
+            let rawTitle = activeTab.title || "Unknown Track";
+            let artist = "Web Audio Source";
+            let title = rawTitle;
+            let source = "Browser Tab";
+
+            // Parse common sources
+            if (activeTab.url?.includes("youtube.com")) {
+              source = "YouTube";
+              rawTitle = rawTitle.replace(" - YouTube", "");
+              if (rawTitle.includes(" - ")) {
+                const parts = rawTitle.split(" - ");
+                artist = parts[0];
+                title = parts[1];
+              }
+            } else if (activeTab.url?.includes("spotify.com")) {
+              source = "Spotify";
+              rawTitle = rawTitle.replace(" - Spotify", "");
+              if (rawTitle.includes(" - ")) {
+                const parts = rawTitle.split(" - ");
+                title = parts[0];
+                artist = parts[1];
+              }
+            }
+
+            setActiveTabMedia({
+              id: activeTab.id,
+              title: title,
+              artist: artist,
+              source: source,
+            });
+            
+            // Sync play state to active tab playing
+            setIsPlaying(true);
+          } else {
+            setActiveTabMedia(null);
+          }
+        });
+      }
+    };
+
+    checkActiveTabs();
+    const interval = setInterval(checkActiveTabs, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 2. Control tab media via Chrome scripting API injection
+  const controlTabMedia = (action: "play" | "pause" | "next" | "prev") => {
+    if (!activeTabMedia) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chrome = (window as any).chrome;
+    if (chrome && chrome.scripting && chrome.tabs) {
+      chrome.scripting.executeScript({
+        target: { tabId: activeTabMedia.id },
+        func: (act: string) => {
+          const media = document.querySelector("video, audio") as HTMLMediaElement;
+          if (media) {
+            if (act === "play") media.play().catch(() => {});
+            if (act === "pause") media.pause();
+          }
+
+          // Simulate next/prev click on YouTube or Spotify buttons
+          if (act === "next") {
+            const nextBtn = document.querySelector(".ytp-next-button, [data-testid='control-button-skip-forward'], button[aria-label='Next']") as HTMLButtonElement;
+            if (nextBtn) nextBtn.click();
+          }
+          if (act === "prev") {
+            const prevBtn = document.querySelector(".ytp-prev-button, [data-testid='control-button-skip-back'], button[aria-label='Previous']") as HTMLButtonElement;
+            if (prevBtn) prevBtn.click();
+          }
+        },
+        args: [action],
+      });
+      
+      if (action === "play") setIsPlaying(true);
+      if (action === "pause") setIsPlaying(false);
+    }
+  };
+
   const handleNext = () => {
-    setCurrentTrackIndex((prev) => (prev + 1) % PLAYLIST.length);
+    if (activeTabMedia) {
+      controlTabMedia("next");
+    } else {
+      setCurrentTrackIndex((prev) => (prev + 1) % PLAYLIST.length);
+    }
   };
 
   const handlePrev = () => {
-    setCurrentTrackIndex((prev) => (prev - 1 + PLAYLIST.length) % PLAYLIST.length);
+    if (activeTabMedia) {
+      controlTabMedia("prev");
+    } else {
+      setCurrentTrackIndex((prev) => (prev - 1 + PLAYLIST.length) % PLAYLIST.length);
+    }
   };
 
   const togglePlay = () => {
+    if (activeTabMedia) {
+      if (isPlaying) {
+        controlTabMedia("pause");
+      } else {
+        controlTabMedia("play");
+      }
+      return;
+    }
+
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -105,8 +223,16 @@ export const MediaDrawer: React.FC<MediaDrawerProps> = ({ isOpen, onClose }) => 
     }
   };
 
-  // Sync state with HTML5 Audio element
+  // 3. Sync state with HTML5 Audio element
   useEffect(() => {
+    // If active tab media is playing, disable local playback
+    if (activeTabMedia) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      return;
+    }
+
     if (audioRef.current) {
       audioRef.current.pause();
     }
@@ -157,7 +283,7 @@ export const MediaDrawer: React.FC<MediaDrawerProps> = ({ isOpen, onClose }) => 
       audio.removeEventListener("ended", handleEnded);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrackIndex]);
+  }, [currentTrackIndex, activeTabMedia]);
 
   // Adjust volume
   useEffect(() => {
@@ -186,6 +312,7 @@ export const MediaDrawer: React.FC<MediaDrawerProps> = ({ isOpen, onClose }) => 
   };
 
   const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (activeTabMedia) return; // Cannot seek external active tab directly
     if (!audioRef.current || duration === 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -235,61 +362,85 @@ export const MediaDrawer: React.FC<MediaDrawerProps> = ({ isOpen, onClose }) => 
               <div className="absolute inset-10 rounded-full border border-neutral-800/50" />
 
               {/* Album Art Core */}
-              <div className={`w-16 h-16 rounded-full ${track.cover} flex items-center justify-center overflow-hidden border border-black/40`}>
-                <Disc size={20} className="text-white/60" />
+              <div className={`w-16 h-16 rounded-full ${activeTabMedia ? "bg-gradient-to-tr from-cyan-500 to-blue-800" : track.cover} flex items-center justify-center overflow-hidden border border-black/40`}>
+                <Disc size={20} className="text-white/60 animate-pulse" />
               </div>
             </div>
           </div>
         </div>
 
+        {/* Dynamic Header Badge for active tab connection */}
+        {activeTabMedia && (
+          <div className="mx-auto mb-2 flex items-center gap-1.5 px-2.5 py-1 bg-sky-500/10 border border-sky-500/15 rounded-full text-[9px] font-mono text-sky-400 font-bold uppercase tracking-wider shrink-0">
+            <Tv size={10} />
+            Tab Connected: {activeTabMedia.source}
+          </div>
+        )}
+
         {/* Info */}
         <div className="text-center mb-5 shrink-0">
-          <h3 className="text-sm font-bold text-foreground/80 truncate px-2">{track.title}</h3>
-          <p className="text-[11px] text-foreground/45 mt-1 font-mono">{track.artist} — {track.album}</p>
+          <h3 className="text-sm font-bold text-foreground/80 truncate px-2">
+            {activeTabMedia ? activeTabMedia.title : track.title}
+          </h3>
+          <p className="text-[11px] text-foreground/45 mt-1 font-mono">
+            {activeTabMedia ? activeTabMedia.artist : `${track.artist} — ${track.album}`}
+          </p>
         </div>
 
-        {/* Dynamic Lyrics Container */}
+        {/* Dynamic Lyrics / Status Container */}
         <div className="flex-1 min-h-[140px] relative overflow-hidden bg-black/15 border border-white/[0.03] rounded-2xl mb-5 px-4 py-6">
           <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-card-bg/95 to-transparent pointer-events-none z-10" />
           <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card-bg/95 to-transparent pointer-events-none z-10" />
 
-          <div
-            ref={lyricsContainerRef}
-            className="h-full overflow-y-auto space-y-4 pr-1 text-center scroll-smooth scrollbar-thin select-none"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {track.lyrics.map((lyr, index) => {
-              const isActive = index === currentLyricIndex;
-              return (
-                <div
-                  key={index}
-                  className={`text-[11px] leading-relaxed transition-all duration-300 font-mono ${
-                    isActive
-                      ? "text-sky-400 font-bold scale-105 opacity-100"
-                      : "text-foreground/30 opacity-40"
-                  }`}
-                >
-                  {lyr.text}
-                </div>
-              );
-            })}
-          </div>
+          {activeTabMedia ? (
+            <div className="h-full flex flex-col justify-center items-center text-center space-y-3 px-2">
+              <span className="text-[20px] animate-bounce">📻</span>
+              <p className="text-[11px] text-foreground/85 leading-relaxed font-mono font-semibold">
+                Streaming Realtime dari Tab Aktif Browser Anda
+              </p>
+              <p className="text-[10px] text-foreground/40 leading-relaxed max-w-[200px]">
+                Mengontrol audio tab secara langsung. Lirik otomatis tersembunyi untuk mode tab eksternal.
+              </p>
+            </div>
+          ) : (
+            <div
+              ref={lyricsContainerRef}
+              className="h-full overflow-y-auto space-y-4 pr-1 text-center scroll-smooth scrollbar-thin select-none"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {track.lyrics.map((lyr, index) => {
+                const isActive = index === currentLyricIndex;
+                return (
+                  <div
+                    key={index}
+                    className={`text-[11px] leading-relaxed transition-all duration-300 font-mono ${
+                      isActive
+                        ? "text-sky-400 font-bold scale-105 opacity-100"
+                        : "text-foreground/30 opacity-40"
+                    }`}
+                  >
+                    {lyr.text}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Media Progress Tracker */}
         <div className="mb-4 shrink-0">
           <div
             onClick={handleProgressBarClick}
-            className="w-full h-1 bg-white/10 rounded-full overflow-hidden cursor-pointer relative"
+            className={`w-full h-1 bg-white/10 rounded-full overflow-hidden relative ${activeTabMedia ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
           >
             <div
               className="h-full bg-sky-400 transition-all duration-100"
-              style={{ width: `${duration ? (progress / duration) * 100 : 0}%` }}
+              style={{ width: `${activeTabMedia ? 100 : (duration ? (progress / duration) * 100 : 0)}%` }}
             />
           </div>
           <div className="flex justify-between text-[9px] font-mono text-foreground/35 mt-1.5">
-            <span>{formatTime(progress)}</span>
-            <span>{formatTime(duration)}</span>
+            <span>{activeTabMedia ? "LIVE" : formatTime(progress)}</span>
+            <span>{activeTabMedia ? "TAB AUDIO" : formatTime(duration)}</span>
           </div>
         </div>
 
@@ -326,7 +477,8 @@ export const MediaDrawer: React.FC<MediaDrawerProps> = ({ isOpen, onClose }) => 
           step="0.01"
           value={volume}
           onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="flex-1 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-sky-400"
+          disabled={!!activeTabMedia}
+          className={`flex-1 h-1 bg-white/10 rounded-full appearance-none accent-sky-400 ${activeTabMedia ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />
       </div>
     </motion.div>

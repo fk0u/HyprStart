@@ -32,6 +32,7 @@ const Dashboard: React.FC = () => {
   const [focusMode, setFocusMode] = useState(false);
   const [customBgInput, setCustomBgInput] = useState(backgroundUrl);
   const [settingsTab, setSettingsTab] = useState<"theme" | "wallpaper">("theme");
+  const [showStartupInstructions, setShowStartupInstructions] = useState(false);
   const [introComplete, setIntroComplete] = useState<boolean>(false);
   const [showIntro, setShowIntro] = useState<boolean>(true);
 
@@ -479,15 +480,22 @@ const Dashboard: React.FC = () => {
 
               {/* Reset configuration footer */}
               <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center shrink-0">
-                <span className="text-[10px] text-foreground/25">Version 3.2.0 (Discover Feed)</span>
                 <button
+                  type="button"
+                  onClick={() => setShowStartupInstructions(true)}
+                  className="px-2.5 py-1.5 bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 rounded-xl text-[11px] text-foreground/80 transition-all cursor-pointer font-medium"
+                >
+                  🚀 Set as Startup Page
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     if (confirm("Restore factory settings and clear all configurations? This cannot be undone.")) {
                       resetConfig();
                       setShowSettings(false);
                     }
                   }}
-                  className="px-3 py-1.5 bg-red-950/20 border border-red-500/15 rounded-xl text-xs text-red-400 hover:bg-red-950/40 hover:border-red-500/30 transition-all cursor-pointer"
+                  className="px-2.5 py-1.5 bg-red-950/20 border border-red-500/15 rounded-xl text-[11px] text-red-400 hover:bg-red-950/40 hover:border-red-500/30 transition-all cursor-pointer font-medium"
                 >
                   Reset Settings
                 </button>
@@ -548,6 +556,87 @@ const Dashboard: React.FC = () => {
                   <span className="text-foreground/50">Toggle this Guide</span>
                   <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-foreground/80 font-bold border border-white/10">?</kbd>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Set as Startup Page Instructions Overlay ─── */}
+      <AnimatePresence>
+        {showStartupInstructions && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowStartupInstructions(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.25 }}
+              className="bg-card-bg/95 backdrop-blur-xl border border-card-border rounded-2xl p-6 w-full max-w-sm shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowStartupInstructions(false)}
+                className="absolute top-4 right-4 text-foreground/30 hover:text-foreground/65 transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+
+              <h2 className="text-sm font-semibold tracking-wider uppercase text-foreground/80 mb-4">
+                🚀 Set as Startup Page
+              </h2>
+
+              <p className="text-xs text-foreground/50 leading-relaxed mb-4">
+                Untuk alasan keamanan, browser modern melarang website mengubah halaman startup Anda secara otomatis. Anda dapat mengaturnya secara manual dengan 3 langkah mudah:
+              </p>
+
+              <div className="space-y-3.5 text-xs text-foreground/75 font-mono mb-5">
+                <div className="flex gap-2">
+                  <span className="text-sky-400 font-bold">1.</span>
+                  <span>Buka menu pengaturan startup browser Anda di <span className="text-foreground/90 font-semibold bg-white/5 px-1 py-0.5 rounded">chrome://settings/onStartup</span></span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-sky-400 font-bold">2.</span>
+                  <span>Pilih opsi <strong>&ldquo;Open a specific page or set of pages&rdquo;</strong></span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-sky-400 font-bold">3.</span>
+                  <span>Klik <strong>&ldquo;Add a new page&rdquo;</strong> dan masukkan tautan halaman di bawah ini:</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 bg-white/[0.02] border border-white/5 p-2 rounded-xl mb-6">
+                <input
+                  type="text"
+                  readOnly
+                  value={typeof window !== "undefined" ? window.location.origin : "http://localhost:8174"}
+                  className="flex-1 bg-transparent text-[10px] font-mono text-foreground/60 outline-none select-all px-1"
+                />
+                <button
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      navigator.clipboard.writeText(window.location.origin);
+                      addNotification("Link copied to clipboard!", "success");
+                    }
+                  }}
+                  className="px-2.5 py-1 bg-white/10 hover:bg-white/15 text-[10px] rounded-lg text-foreground font-semibold cursor-pointer transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowStartupInstructions(false)}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-xs text-foreground font-medium cursor-pointer transition-colors"
+                >
+                  Done
+                </button>
               </div>
             </motion.div>
           </motion.div>
